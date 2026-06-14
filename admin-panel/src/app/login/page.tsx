@@ -20,7 +20,10 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       })
-      if (!res.ok) throw new Error((await res.json()).error)
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Credenciales incorrectas')
+      }
       router.push('/admin')
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Error al iniciar sesión')
