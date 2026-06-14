@@ -2,6 +2,8 @@
 import { useForm } from 'react-hook-form'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Upload, X } from 'lucide-react'
+import Image from 'next/image'
 
 interface ProductForm {
   name: string; slug: string; description: string; price: number
@@ -13,6 +15,8 @@ export default function NuevoProductoPage() {
     defaultValues: { active: true, featured: false }
   })
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([])
+  const [images, setImages] = useState<string[]>([])
+  const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
@@ -26,13 +30,39 @@ export default function NuevoProductoPage() {
     if (name) setValue('slug', name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))
   }, [name, setValue])
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    setUploading(true)
+    try {
+      const urls = await Promise.all(files.map(async file => {
+        const form = new FormData()
+        form.append('file', file)
+        const res = await fetch('/api/upload', { method: 'POST', body: form })
+        const { url } = await res.json()
+        return url as string
+      }))
+      setImages(prev => [...prev, ...urls])
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const removeImage = (url: string) => setImages(prev => prev.filter(u => u !== url))
+
   const onSubmit = async (data: ProductForm) => {
     setLoading(true); setError('')
     try {
       const res = await fetch('/api/productos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, price: Number(data.price), stock: Number(data.stock), categoryId: data.categoryId ? Number(data.categoryId) : null }),
+        body: JSON.stringify({
+          ...data,
+          price: Number(data.price),
+          stock: Number(data.stock),
+          categoryId: data.categoryId ? Number(data.categoryId) : null,
+          images,
+        }),
       })
       if (!res.ok) throw new Error((await res.json()).error)
       router.push('/admin/productos')
@@ -45,6 +75,28 @@ export default function NuevoProductoPage() {
     <div className="max-w-2xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Nuevo producto</h1>
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+
+        {/* Imágenes */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Imágenes</label>
+          <div className="flex flex-wrap gap-3 mb-3">
+            {images.map(url => (
+              <div key={url} className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200">
+                <Image src={url} alt="" fill className="object-cover" />
+                <button type="button" onClick={() => removeImage(url)}
+                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5">
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+            <label className={`w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-brand-600 transition-colors ${uploading ? 'opacity-50' : ''}`}>
+              <Upload size={20} className="text-gray-400 mb-1" />
+              <span className="text-xs text-gray-400">{uploading ? 'Subiendo...' : 'Subir'}</span>
+              <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
+            </label>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
@@ -89,6 +141,7 @@ export default function NuevoProductoPage() {
             </label>
           </div>
         </div>
+
         {error && <p className="text-sm text-red-500">{error}</p>}
         <div className="flex gap-3 pt-2">
           <button type="submit" disabled={loading}
