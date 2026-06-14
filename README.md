@@ -1,11 +1,11 @@
-# Landbruk — Sistema E-Commerce
+# Landbruck — Sistema E-Commerce
 
 Tienda Shopify de semillas con inventario local SQL Server, sincronización en nube (Supabase), despacho Starken y panel administrador Next.js.
 
 ## Estructura
 
 ```
-landbruk/
+landbruck/
   api/              → Backend Express (Node.js)
   admin-panel/      → Frontend Next.js (panel admin)
   .env.example      → Variables de entorno

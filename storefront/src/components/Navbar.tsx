@@ -12,7 +12,7 @@ export default function Navbar() {
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
         <Link href="/" className="text-2xl font-bold text-brand-700">
-          Landbruk
+          Landbruck
         </Link>
 
         <nav className="hidden md:flex gap-6 text-sm font-medium text-gray-600">

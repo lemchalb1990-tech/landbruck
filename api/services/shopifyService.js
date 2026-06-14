@@ -14,7 +14,7 @@ async function publishProduct(product) {
     product: {
       title:        product.name,
       body_html:    buildDescription(product),
-      vendor:       'Landbruk',
+      vendor:       'Landbruck',
       product_type: product.category || 'Semillas',
       tags:         buildTags(product),
       variants: [{

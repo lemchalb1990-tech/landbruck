@@ -1,7 +1,7 @@
 {
-  "name": "landbruk-api",
+  "name": "landbruck-api",
   "version": "1.0.0",
-  "description": "API middleware Landbruk",
+  "description": "API middleware Landbruck",
   "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",

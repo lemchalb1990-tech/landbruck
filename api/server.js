@@ -40,4 +40,4 @@ cron.schedule('0 23 * * *', async () => {
 })
 
 const PORT = process.env.PORT || 3001
-app.listen(PORT, () => console.log(`\u{1F331} Landbruk API en http://localhost:${PORT}`))
+app.listen(PORT, () => console.log(`\u{1F331} Landbruck API en http://localhost:${PORT}`))

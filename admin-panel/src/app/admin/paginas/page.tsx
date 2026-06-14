@@ -5,7 +5,7 @@ import PageEditor from './PageEditor'
 
 const DEFAULT_CONFIG = {
   hero: { title: 'Semillas y productos agrícolas', subtitle: 'Todo lo que necesitas para tu huerto, jardín y cultivo. Envíos a todo Chile.', buttonText: 'Ver productos', buttonUrl: '/productos' },
-  about: { title: 'Sobre Landbruk', content: '' },
+  about: { title: 'Sobre Landbruck', content: '' },
   contact: { email: 'contacto@landbruk.cl', phone: '', address: 'Santiago, Chile' },
 }
 

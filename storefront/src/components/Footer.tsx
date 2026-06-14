@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="bg-brand-900 text-white mt-20">
       <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
         <div>
-          <h3 className="text-xl font-bold mb-3">Landbruk</h3>
+          <h3 className="text-xl font-bold mb-3">Landbruck</h3>
           <p className="text-sm text-gray-300">
             Semillas y productos agrícolas de calidad para tu huerto y jardín.
           </p>
@@ -22,13 +22,13 @@ export default function Footer() {
         <div>
           <h4 className="font-semibold mb-3">Contacto</h4>
           <ul className="space-y-2 text-sm text-gray-300">
-            <li>contacto@landbruk.cl</li>
+            <li>contacto@landbruck.cl</li>
             <li>Santiago, Chile</li>
           </ul>
         </div>
       </div>
       <div className="border-t border-brand-700 text-center py-4 text-xs text-gray-400">
-        © {new Date().getFullYear()} Landbruk. Todos los derechos reservados.
+        © {new Date().getFullYear()} Landbruck. Todos los derechos reservados.
       </div>
     </footer>
   )

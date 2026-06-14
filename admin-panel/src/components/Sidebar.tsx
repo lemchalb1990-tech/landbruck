@@ -19,7 +19,7 @@ export default function Sidebar() {
   return (
     <aside className="w-64 min-h-screen bg-sidebar text-white flex flex-col">
       <div className="px-6 py-5 border-b border-white/10">
-        <h1 className="text-lg font-bold">Landbruk Admin</h1>
+        <h1 className="text-lg font-bold">Landbruck Admin</h1>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-1">
         {links.map(({ href, label, icon: Icon }) => (

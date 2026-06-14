@@ -5,7 +5,7 @@ import Footer from '@/components/Footer'
 import { CartProvider } from '@/context/CartContext'
 
 export const metadata: Metadata = {
-  title: 'Landbruk — Semillas y productos agrícolas',
+  title: 'Landbruck — Semillas y productos agrícolas',
   description: 'Tienda online de semillas y productos agrícolas para tu huerto y jardín.',
 }
 

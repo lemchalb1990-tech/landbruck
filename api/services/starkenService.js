@@ -20,9 +20,9 @@ async function crearOrdenDespacho(saleId) {
     account:  process.env.STARKEN_ACCOUNT_NUMBER,
     service:  'NORMAL',
     sender: {
-      name:    'Landbruk',
+      name:    'Landbruck',
       city:    process.env.STARKEN_ORIGIN_CITY || 'Santiago',
-      address: 'Dirección bodega Landbruk',
+      address: 'Dirección bodega Landbruck',
       phone:   process.env.STARKEN_ORIGIN_PHONE || '',
     },
     receiver: {
