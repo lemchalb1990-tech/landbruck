@@ -4,16 +4,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        lb: {
-          dark:  '#4c8c3f',
-          light: '#a1bf37',
-          bg:    '#f7faf4',
-          text:  '#1a2e17',
-          muted: '#5a7a55',
-          border:'#d4e8cc',
-        },
+        brand: { 600: '#16a34a', 700: '#15803d', 900: '#14532d' },
+        sidebar: '#1e293b',
       },
     },
   },
-  plugins: [require('@tailwindcss/typography')],
+  plugins: [],
 }

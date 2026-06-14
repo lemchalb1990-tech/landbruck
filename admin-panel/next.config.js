@@ -1,5 +1,10 @@
+const path = require('path')
+
 /** @type {import('next').NextConfig} */
 module.exports = {
-  env: { API_URL: process.env.API_URL || 'http://localhost:3001' },
   images: { domains: ['res.cloudinary.com'] },
+  webpack: (config) => {
+    config.resolve.alias['@'] = path.resolve(__dirname, 'src')
+    return config
+  },
 }
