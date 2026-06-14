@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Trash2, Plus, Eye, EyeOff } from 'lucide-react'
 
-interface MenuItem { id: number; label: string; url: string; order: number; visible: boolean; children: MenuItem[] }
+interface MenuItem { id: number; label: string; url: string; order: number; visible: boolean; children?: MenuItem[] }
 
 export default function MenuEditor({ items }: { items: MenuItem[] }) {
   const [newLabel, setNewLabel] = useState('')
