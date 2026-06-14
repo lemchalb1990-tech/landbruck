@@ -1,18 +1,24 @@
-import * as Minio from 'minio'
+import { S3Client } from '@aws-sdk/client-s3'
 
-export const minioClient = new Minio.Client({
-  endPoint: process.env.MINIO_ENDPOINT!,
-  port: Number(process.env.MINIO_PORT ?? 443),
-  useSSL: process.env.MINIO_USE_SSL === 'true',
-  accessKey: process.env.MINIO_ACCESS_KEY!,
-  secretKey: process.env.MINIO_SECRET_KEY!,
+const endpoint = process.env.MINIO_USE_SSL === 'true'
+  ? `https://${process.env.MINIO_ENDPOINT}`
+  : `http://${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT ?? 9000}`
+
+export const s3Client = new S3Client({
+  endpoint,
+  region: 'us-east-1',
+  credentials: {
+    accessKeyId: process.env.MINIO_ACCESS_KEY!,
+    secretAccessKey: process.env.MINIO_SECRET_KEY!,
+  },
+  forcePathStyle: true,
 })
 
 export const BUCKET = process.env.MINIO_BUCKET ?? 'landbruck'
 
 export function getPublicUrl(filename: string) {
-  const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http'
-  const port = process.env.MINIO_PORT
-  const portStr = (port === '443' || port === '80') ? '' : `:${port}`
-  return `${protocol}://${process.env.MINIO_ENDPOINT}${portStr}/${BUCKET}/${filename}`
+  const base = process.env.MINIO_USE_SSL === 'true'
+    ? `https://${process.env.MINIO_ENDPOINT}`
+    : `http://${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT ?? 9000}`
+  return `${base}/${BUCKET}/${filename}`
 }
