@@ -27,7 +27,22 @@ const DEFAULT_TESTIMONIALS = [
   { id: 3, name: 'Ana Torres',     role: 'Jardín urbano, Santiago', text: 'Llegó rápido y bien embalado. Las plantas aromáticas están creciendo muy bien desde el primer día.', rating: 4 },
 ]
 
-const DEFAULT_SOCIAL = { facebook: '', instagram: '', tiktok: '', youtube: '', whatsapp: '' }
+const DEFAULT_SOCIAL = [
+  { id: 1, platform: 'instagram', label: 'Instagram', url: '', enabled: false },
+  { id: 2, platform: 'facebook',  label: 'Facebook',  url: '', enabled: false },
+  { id: 3, platform: 'youtube',   label: 'YouTube',   url: '', enabled: false },
+  { id: 4, platform: 'tiktok',    label: 'TikTok',    url: '', enabled: false },
+  { id: 5, platform: 'whatsapp',  label: 'WhatsApp',  url: '', enabled: false },
+]
+
+function migrateSocial(raw: unknown): typeof DEFAULT_SOCIAL {
+  if (Array.isArray(raw) && raw.length > 0) return raw as typeof DEFAULT_SOCIAL
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    const old = raw as Record<string, string>
+    return DEFAULT_SOCIAL.map(item => ({ ...item, url: old[item.platform] || '', enabled: !!(old[item.platform]) }))
+  }
+  return DEFAULT_SOCIAL
+}
 
 const DEFAULT_CONFIG = {
   logo: { type: 'text' as const, value: 'Landbruck' },
@@ -38,7 +53,7 @@ const DEFAULT_CONFIG = {
   contact:  { email: 'contacto@landbruck.cl', phone: '', address: 'Santiago, Chile' },
   benefits:     DEFAULT_BENEFITS,
   testimonials: DEFAULT_TESTIMONIALS,
-  social:       DEFAULT_SOCIAL,
+  social:       [] as typeof DEFAULT_SOCIAL,
 }
 
 export default async function PaginasPage() {
@@ -53,7 +68,7 @@ export default async function PaginasPage() {
     contact:      { ...DEFAULT_CONFIG.contact,        ...((configMap.contact      as object) ?? {}) },
     benefits:     (configMap.benefits     as typeof DEFAULT_BENEFITS     | undefined) ?? DEFAULT_BENEFITS,
     testimonials: (configMap.testimonials as typeof DEFAULT_TESTIMONIALS | undefined) ?? DEFAULT_TESTIMONIALS,
-    social:       { ...DEFAULT_SOCIAL,               ...((configMap.social       as object) ?? {}) },
+    social:       migrateSocial(configMap.social),
   }
 
   return (

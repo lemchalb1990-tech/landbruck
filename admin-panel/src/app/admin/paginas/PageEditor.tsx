@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import Image from 'next/image'
 import {
-  Upload, Plus, Trash2, ChevronDown, ChevronUp, Phone,
+  Upload, Plus, Trash2, ChevronDown, ChevronUp, Phone, Link2,
   Sprout, Leaf, Wrench, FlaskConical, Sun, Droplets, Package, TreePine, Hammer,
   Award, Users, Star, Heart, ShieldCheck, Truck, CheckCircle,
   Instagram, Facebook, Youtube, MessageCircle,
@@ -12,7 +12,7 @@ import {
 interface AboutValue  { id: number; icon: string; title: string; desc: string; color: string }
 interface Benefit     { id: number; icon: string; title: string; desc: string; color: string }
 interface Testimonial { id: number; name: string; role: string; text: string; rating: number }
-interface SocialConfig { facebook: string; instagram: string; tiktok: string; youtube: string; whatsapp: string }
+interface SocialItem  { id: number; platform: string; label: string; url: string; enabled: boolean }
 interface Logo { type: 'text' | 'image'; value: string }
 interface SiteInfo { name: string; description: string; favicon: string }
 export interface Slide { id: number; image: string; tag: string; title: string; subtitle: string; cta: string; href: string }
@@ -30,7 +30,7 @@ interface Config {
   contact: { email: string; phone: string; address: string }
   benefits: Benefit[]
   testimonials: Testimonial[]
-  social: SocialConfig
+  social: SocialItem[]
 }
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -85,7 +85,20 @@ const DEFAULT_TESTIMONIALS: Testimonial[] = [
   { id: 3, name: 'Ana Torres',     role: 'Jardín urbano, Santiago', text: 'Llegó rápido y bien embalado. Las plantas aromáticas están creciendo muy bien desde el primer día.', rating: 4 },
 ]
 
-const DEFAULT_SOCIAL: SocialConfig = { facebook: '', instagram: '', tiktok: '', youtube: '', whatsapp: '' }
+const DEFAULT_SOCIAL: SocialItem[] = [
+  { id: 1, platform: 'instagram', label: 'Instagram', url: '', enabled: false },
+  { id: 2, platform: 'facebook',  label: 'Facebook',  url: '', enabled: false },
+  { id: 3, platform: 'youtube',   label: 'YouTube',   url: '', enabled: false },
+  { id: 4, platform: 'tiktok',    label: 'TikTok',    url: '', enabled: false },
+  { id: 5, platform: 'whatsapp',  label: 'WhatsApp',  url: '', enabled: false },
+]
+
+const SOCIAL_ICON_MAP: Record<string, React.ElementType> = {
+  instagram: Instagram,
+  facebook:  Facebook,
+  youtube:   Youtube,
+  whatsapp:  MessageCircle,
+}
 
 export default function PageEditor({ config }: { config: Config }) {
   const [activeTab, setActiveTab] = useState<'logo' | 'hero' | 'about' | 'contact' | 'sections' | 'categories' | 'benefits' | 'testimonials' | 'social'>('logo')
@@ -142,7 +155,9 @@ export default function PageEditor({ config }: { config: Config }) {
   const [testimonials, setTestimonials] = useState<Testimonial[]>(config.testimonials ?? DEFAULT_TESTIMONIALS)
 
   // Social
-  const [social, setSocial] = useState<SocialConfig>({ ...DEFAULT_SOCIAL, ...(config.social ?? {}) })
+  const [social, setSocial] = useState<SocialItem[]>(
+    Array.isArray(config.social) && config.social.length > 0 ? config.social : DEFAULT_SOCIAL
+  )
 
   const { handleSubmit } = useForm({ defaultValues: config })
 
@@ -632,44 +647,65 @@ export default function PageEditor({ config }: { config: Config }) {
 
         {/* ── Redes sociales ── */}
         {activeTab === 'social' && (
-          <div className="space-y-4">
-            <p className="text-sm text-gray-500">Ingresa las URLs completas de cada red social. Los que tengan URL aparecerán en el footer del sitio.</p>
-            <div className="space-y-3">
-              {([
-                { key: 'instagram', label: 'Instagram', icon: Instagram, placeholder: 'https://instagram.com/tutienda' },
-                { key: 'facebook',  label: 'Facebook',  icon: Facebook,  placeholder: 'https://facebook.com/tutienda' },
-                { key: 'youtube',   label: 'YouTube',   icon: Youtube,   placeholder: 'https://youtube.com/@tutienda' },
-                { key: 'tiktok',    label: 'TikTok',    icon: null,      placeholder: 'https://tiktok.com/@tutienda' },
-                { key: 'whatsapp',  label: 'WhatsApp',  icon: MessageCircle, placeholder: 'https://wa.me/56912345678' },
-              ] as const).map(({ key, label, icon: Icon, placeholder }) => (
-                <div key={key} className="flex items-center gap-3">
-                  <div className="w-9 h-9 shrink-0 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">Activa las redes que quieras mostrar en el footer. Puedes agregar redes adicionales con nombre personalizado.</p>
+
+            {/* Header */}
+            <div className="grid grid-cols-[40px_36px_1fr_1fr_32px] gap-2 px-1">
+              <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">Activa</span>
+              <div />
+              <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">Nombre</span>
+              <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">URL</span>
+              <div />
+            </div>
+
+            {social.map((item, index) => {
+              const Icon = item.platform === 'tiktok'
+                ? null
+                : (SOCIAL_ICON_MAP[item.platform] ?? Link2)
+              return (
+                <div key={item.id}
+                  className={`grid grid-cols-[40px_36px_1fr_1fr_32px] gap-2 items-center p-2 rounded-lg border transition-colors ${item.enabled ? 'border-gray-200 bg-white' : 'border-dashed border-gray-100 bg-gray-50 opacity-70'}`}>
+                  <Toggle
+                    checked={item.enabled}
+                    onChange={v => setSocial(p => p.map((s, i) => i === index ? { ...s, enabled: v } : s))}
+                  />
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
                     {Icon
-                      ? <Icon size={18} />
-                      : <svg viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V9.13a8.25 8.25 0 004.83 1.56V7.25a4.86 4.86 0 01-1.06-.56z"/></svg>
+                      ? <Icon size={16} />
+                      : <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V9.13a8.25 8.25 0 004.83 1.56V7.25a4.86 4.86 0 01-1.06-.56z" /></svg>
                     }
                   </div>
-                  <div className="flex-1">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
-                    <input
-                      type="url"
-                      value={social[key]}
-                      onChange={e => setSocial(s => ({ ...s, [key]: e.target.value }))}
-                      placeholder={placeholder}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
-                    />
-                  </div>
-                  {social[key] && (
-                    <button type="button" onClick={() => setSocial(s => ({ ...s, [key]: '' }))}
-                      className="p-1.5 text-gray-300 hover:text-red-500 rounded transition-colors shrink-0 mt-4">
-                      <Trash2 size={15} />
-                    </button>
-                  )}
+                  <input
+                    value={item.label}
+                    onChange={e => setSocial(p => p.map((s, i) => i === index ? { ...s, label: e.target.value } : s))}
+                    placeholder="Nombre"
+                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600 w-full"
+                  />
+                  <input
+                    value={item.url}
+                    onChange={e => setSocial(p => p.map((s, i) => i === index ? { ...s, url: e.target.value } : s))}
+                    placeholder="https://..."
+                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-600 w-full"
+                  />
+                  <button type="button"
+                    onClick={() => setSocial(p => p.filter((_, i) => i !== index))}
+                    className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                    <Trash2 size={15} />
+                  </button>
                 </div>
-              ))}
-            </div>
+              )
+            })}
+
+            <button type="button"
+              onClick={() => setSocial(p => [...p, { id: Date.now(), platform: 'custom', label: '', url: '', enabled: true }])}
+              className="flex items-center gap-2 text-sm font-medium text-brand-600 hover:text-brand-700 transition-colors mt-1">
+              <Plus size={15} />
+              Agregar red social personalizada
+            </button>
+
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-              <p className="text-sm text-blue-700">Los íconos aparecerán en el footer del sitio cuando tengan una URL configurada.</p>
+              <p className="text-sm text-blue-700">Solo las redes <strong>activadas</strong> con URL aparecen en el footer. Las desactivadas se conservan pero no se muestran.</p>
             </div>
           </div>
         )}

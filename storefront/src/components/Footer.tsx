@@ -1,9 +1,9 @@
 import { unstable_noStore as noStore } from 'next/cache'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
-import { Mail, Phone, MapPin, Instagram, Facebook, Youtube, MessageCircle } from 'lucide-react'
+import { Mail, Phone, MapPin, Instagram, Facebook, Youtube, MessageCircle, Link2 } from 'lucide-react'
 
-interface SocialConfig { facebook?: string; instagram?: string; tiktok?: string; youtube?: string; whatsapp?: string }
+interface SocialItem { id: number; platform: string; label: string; url: string; enabled: boolean }
 
 const DEFAULT_CONTACT = { email: 'contacto@landbruck.cl', phone: '', address: 'Santiago, Chile' }
 
@@ -21,9 +21,13 @@ export default async function Footer() {
   const configMap = Object.fromEntries(configs.map(c => [c.key, c.value as Record<string, string>]))
   const contact = { ...DEFAULT_CONTACT, ...(configMap.contact ?? {}) }
   const logoValue = (configMap.logo as { value?: string } | undefined)?.value || 'Landbruck'
-  const social = (configMap.social ?? {}) as SocialConfig
+  const socialRaw = configMap.social
+  const socialItems: SocialItem[] = Array.isArray(socialRaw) ? socialRaw : []
+  const activeSocial = socialItems.filter(s => s.enabled && s.url)
 
-  const hasSocial = social.instagram || social.facebook || social.youtube || social.tiktok || social.whatsapp
+  const SOCIAL_ICON: Record<string, React.ElementType> = {
+    instagram: Instagram, facebook: Facebook, youtube: Youtube, whatsapp: MessageCircle,
+  }
 
   return (
     <footer className="bg-brand-900 text-white mt-20">
@@ -35,38 +39,23 @@ export default async function Footer() {
           <p className="text-sm text-gray-300 leading-relaxed">
             Semillas y productos agrícolas de calidad para tu huerto, jardín y campo.
           </p>
-          {hasSocial && (
-            <div className="flex gap-3 mt-5">
-              {social.instagram && (
-                <a href={social.instagram} target="_blank" rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-gray-300 hover:text-white transition-colors" title="Instagram">
-                  <Instagram size={18} />
-                </a>
-              )}
-              {social.facebook && (
-                <a href={social.facebook} target="_blank" rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-gray-300 hover:text-white transition-colors" title="Facebook">
-                  <Facebook size={18} />
-                </a>
-              )}
-              {social.youtube && (
-                <a href={social.youtube} target="_blank" rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-gray-300 hover:text-white transition-colors" title="YouTube">
-                  <Youtube size={18} />
-                </a>
-              )}
-              {social.tiktok && (
-                <a href={social.tiktok} target="_blank" rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-gray-300 hover:text-white transition-colors" title="TikTok">
-                  <TikTokIcon size={18} />
-                </a>
-              )}
-              {social.whatsapp && (
-                <a href={social.whatsapp} target="_blank" rel="noopener noreferrer"
-                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-gray-300 hover:text-white transition-colors" title="WhatsApp">
-                  <MessageCircle size={18} />
-                </a>
-              )}
+          {activeSocial.length > 0 && (
+            <div className="flex flex-wrap gap-3 mt-5">
+              {activeSocial.map(item => {
+                const Icon = SOCIAL_ICON[item.platform]
+                return (
+                  <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer"
+                    title={item.label}
+                    className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-gray-300 hover:text-white transition-colors">
+                    {item.platform === 'tiktok'
+                      ? <TikTokIcon size={18} />
+                      : Icon
+                        ? <Icon size={18} />
+                        : <Link2 size={18} />
+                    }
+                  </a>
+                )
+              })}
             </div>
           )}
         </div>
