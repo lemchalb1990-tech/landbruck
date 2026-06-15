@@ -8,6 +8,9 @@ fi
 
 trap 'kill $NEXT_PID 2>/dev/null; exit 0' TERM INT
 
+echo "==> Baselining initial migration..."
+npx prisma migrate resolve --applied 20240101000000_init 2>&1 || true
+
 echo "==> Running prisma migrate deploy..."
 npx prisma migrate deploy 2>&1 || echo "Migrate warning (non-fatal)"
 
