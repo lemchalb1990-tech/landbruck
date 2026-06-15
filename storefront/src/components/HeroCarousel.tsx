@@ -4,7 +4,17 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-const slides = [
+export interface Slide {
+  id: number
+  image: string
+  tag: string
+  title: string
+  subtitle: string
+  cta: string
+  href: string
+}
+
+const DEFAULT_SLIDES: Slide[] = [
   {
     id: 1,
     image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1600&q=80',
@@ -34,7 +44,8 @@ const slides = [
   },
 ]
 
-export default function HeroCarousel() {
+export default function HeroCarousel({ slides: propSlides }: { slides?: Slide[] }) {
+  const slides = propSlides && propSlides.length > 0 ? propSlides : DEFAULT_SLIDES
   const [current, setCurrent] = useState(0)
   const [animating, setAnimating] = useState(false)
 
@@ -46,7 +57,7 @@ export default function HeroCarousel() {
   }, [animating])
 
   const prev = () => goTo((current - 1 + slides.length) % slides.length)
-  const next = useCallback(() => goTo((current + 1) % slides.length), [current, goTo])
+  const next = useCallback(() => goTo((current + 1) % slides.length), [current, goTo, slides.length])
 
   useEffect(() => {
     const timer = setInterval(next, 5000)

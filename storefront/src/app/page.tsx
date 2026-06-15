@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import ProductCard from '@/components/ProductCard'
-import HeroCarousel from '@/components/HeroCarousel'
+import HeroCarousel, { Slide } from '@/components/HeroCarousel'
 import { Sprout, Wrench, FlaskConical, Leaf, Truck, ShieldCheck, Phone } from 'lucide-react'
 
 async function getFeaturedProducts() {
@@ -12,6 +12,12 @@ async function getFeaturedProducts() {
     take: 8,
     orderBy: { createdAt: 'desc' },
   })
+}
+
+async function getHeroSlides(): Promise<Slide[] | undefined> {
+  const config = await prisma.siteConfig.findUnique({ where: { key: 'heroSlides' } })
+  if (!config) return undefined
+  return config.value as Slide[]
 }
 
 const categories = [
@@ -49,12 +55,12 @@ const benefits = [
 ]
 
 export default async function HomePage() {
-  const featured = await getFeaturedProducts()
+  const [featured, heroSlides] = await Promise.all([getFeaturedProducts(), getHeroSlides()])
 
   return (
     <>
       {/* Hero carousel */}
-      <HeroCarousel />
+      <HeroCarousel slides={heroSlides} />
 
       {/* Categorías */}
       <section className="max-w-7xl mx-auto px-4 py-14">
