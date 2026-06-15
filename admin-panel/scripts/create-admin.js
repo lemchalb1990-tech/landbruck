@@ -9,12 +9,12 @@ async function main() {
   const name = process.env.ADMIN_NAME || 'Administrador'
 
   const hashed = await bcrypt.hash(password, 10)
-  const admin = await prisma.admin.upsert({
+  const admin = await prisma.user.upsert({
     where: { email },
     update: { password: hashed, name },
-    create: { name, email, password: hashed },
+    create: { name, email, password: hashed, role: 'ADMIN' },
   })
-  console.log(`Admin creado: ${admin.email}`)
+  console.log(`Usuario creado: ${admin.email} [${admin.role}]`)
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect())
