@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { Sprout, Award, Users, Leaf } from 'lucide-react'
 
@@ -15,8 +16,10 @@ const values = [
 
 export default async function NosotrosPage() {
   const configs = await prisma.siteConfig.findMany()
-  const configMap = Object.fromEntries(configs.map(c => [c.key, c.value as Record<string, string>]))
-  const about = { ...DEFAULT_ABOUT, ...(configMap.about ?? {}) }
+  const configMap = Object.fromEntries(configs.map(c => [c.key, c.value as Record<string, unknown>]))
+  const sections = configMap.sections as { nosotros?: boolean } | undefined
+  if (sections?.nosotros === false) redirect('/')
+  const about = { ...DEFAULT_ABOUT, ...((configMap.about ?? {}) as Record<string, string>) }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-16">

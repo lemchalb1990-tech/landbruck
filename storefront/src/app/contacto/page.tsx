@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { Mail, Phone, MapPin } from 'lucide-react'
 
@@ -7,8 +8,10 @@ const DEFAULT_CONTACT = { email: 'contacto@landbruck.cl', phone: '', address: 'S
 
 export default async function ContactoPage() {
   const configs = await prisma.siteConfig.findMany()
-  const configMap = Object.fromEntries(configs.map(c => [c.key, c.value as Record<string, string>]))
-  const contact = { ...DEFAULT_CONTACT, ...(configMap.contact ?? {}) }
+  const configMap = Object.fromEntries(configs.map(c => [c.key, c.value as Record<string, unknown>]))
+  const sections = configMap.sections as { contacto?: boolean } | undefined
+  if (sections?.contacto === false) redirect('/')
+  const contact = { ...DEFAULT_CONTACT, ...((configMap.contact ?? {}) as Record<string, string>) }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-16">
