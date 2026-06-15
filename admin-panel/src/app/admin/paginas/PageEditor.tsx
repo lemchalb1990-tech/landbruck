@@ -94,11 +94,25 @@ export default function PageEditor({ config }: { config: Config }) {
 
             {logo.type === 'image' && (
               <div className="space-y-3">
-                {logo.value && (
-                  <div className="relative h-20 w-48 bg-gray-50 border rounded-lg overflow-hidden">
-                    <Image src={logo.value} alt="Logo actual" fill className="object-contain p-2" />
+                {/* Previsualización con marco exacto del navbar */}
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-1.5">Vista previa (tamaño real en navbar)</p>
+                  <div className="inline-flex items-center bg-white border border-gray-200 rounded-lg px-4 h-16 shadow-sm">
+                    {logo.value ? (
+                      <Image src={logo.value} alt="Logo" width={140} height={40} className="object-contain h-10 w-auto" />
+                    ) : (
+                      <span className="text-sm text-gray-300 italic">Sin imagen</span>
+                    )}
                   </div>
-                )}
+                </div>
+
+                <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-xs text-blue-700 space-y-1">
+                  <p className="font-semibold">Resolución recomendada</p>
+                  <p>• Tamaño: <strong>300 × 80 px</strong> (o proporcional)</p>
+                  <p>• Formato: <strong>PNG</strong> con fondo transparente</p>
+                  <p>• El logo se mostrará con máx. 140px de ancho y 40px de alto</p>
+                </div>
+
                 <label className="flex items-center gap-2 cursor-pointer bg-gray-50 hover:bg-gray-100 border border-dashed border-gray-300 rounded-lg px-4 py-3 w-fit text-sm text-gray-600 transition-colors">
                   <Upload size={16} />
                   {uploading ? 'Subiendo...' : logo.value ? 'Cambiar imagen' : 'Subir imagen'}
