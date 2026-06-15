@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Color primario (verde Landbruck) */
+  --brand-50:  240 253 244;
+  --brand-100: 220 252 231;
+  --brand-500:  34 197  94;
+  --brand-600:  22 163  74;
+  --brand-700:  21 128  61;
+  --brand-900:  20  83  45;
+
+  /* Estilo de botones */
+  --btn-radius: 9999px;
+
+  /* Tipografía */
+  --font-body: system-ui, sans-serif;
+}
+
 body {
   @apply bg-gray-50 text-gray-900;
+  font-family: var(--font-body);
+}
+
+/* Botones principales heredan el radio del tema */
+a[class*="rounded-full"],
+button[class*="rounded-full"] {
+  border-radius: var(--btn-radius);
 }
