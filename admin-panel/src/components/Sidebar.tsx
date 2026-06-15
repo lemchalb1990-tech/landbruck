@@ -1,21 +1,23 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingBag, Users, FileText, Palette, Menu, LogOut } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingBag, Users, FileText, Palette, Menu, LogOut, UserCog } from 'lucide-react'
 import clsx from 'clsx'
 
-const links = [
-  { href: '/admin',          label: 'Dashboard',      icon: LayoutDashboard },
-  { href: '/admin/productos', label: 'Productos',      icon: Package },
-  { href: '/admin/pedidos',   label: 'Pedidos',        icon: ShoppingBag },
-  { href: '/admin/clientes',  label: 'Clientes',       icon: Users },
-  { href: '/admin/paginas',   label: 'Páginas',        icon: FileText },
-  { href: '/admin/tema',      label: 'Tema y estilos', icon: Palette },
-  { href: '/admin/menu',      label: 'Menú',           icon: Menu },
+const ALL_LINKS = [
+  { href: '/admin',            label: 'Dashboard',      icon: LayoutDashboard, roles: ['ADMIN', 'GESTOR'] },
+  { href: '/admin/productos',  label: 'Productos',      icon: Package,         roles: ['ADMIN', 'GESTOR'] },
+  { href: '/admin/pedidos',    label: 'Pedidos',        icon: ShoppingBag,     roles: ['ADMIN', 'GESTOR'] },
+  { href: '/admin/clientes',   label: 'Clientes',       icon: Users,           roles: ['ADMIN', 'GESTOR'] },
+  { href: '/admin/paginas',    label: 'Páginas',        icon: FileText,        roles: ['ADMIN'] },
+  { href: '/admin/tema',       label: 'Tema y estilos', icon: Palette,         roles: ['ADMIN'] },
+  { href: '/admin/menu',       label: 'Menú',           icon: Menu,            roles: ['ADMIN'] },
+  { href: '/admin/usuarios',   label: 'Usuarios',       icon: UserCog,         roles: ['ADMIN'] },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ role }: { role: string }) {
   const pathname = usePathname()
+  const links = ALL_LINKS.filter(l => l.roles.includes(role))
 
   return (
     <aside className="w-64 min-h-screen bg-sidebar text-white flex flex-col">
