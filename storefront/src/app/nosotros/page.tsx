@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { Sprout, Award, Users, Leaf } from 'lucide-react'
 
 const DEFAULT_ABOUT = { title: 'Sobre Landbruck', content: '' }
+const DEFAULT_CTA = { enabled: true, title: '¿Tienes alguna pregunta?', description: 'Estamos aquí para ayudarte.', buttonText: 'Contáctanos', buttonUrl: '/contacto' }
 
 const values = [
   { icon: Sprout, title: 'Calidad en semillas', desc: 'Selección rigurosa de variedades adaptadas al clima chileno.', color: 'text-green-600 bg-green-50' },
@@ -19,7 +20,9 @@ export default async function NosotrosPage() {
   const configMap = Object.fromEntries(configs.map(c => [c.key, c.value as Record<string, unknown>]))
   const sections = configMap.sections as { nosotros?: boolean } | undefined
   if (sections?.nosotros === false) redirect('/')
-  const about = { ...DEFAULT_ABOUT, ...((configMap.about ?? {}) as Record<string, string>) }
+  const aboutRaw = (configMap.about ?? {}) as Record<string, unknown>
+  const about = { ...DEFAULT_ABOUT, ...(aboutRaw as Record<string, string>) }
+  const cta = { ...DEFAULT_CTA, ...((aboutRaw.cta ?? {}) as Record<string, unknown>) } as typeof DEFAULT_CTA
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-16">
@@ -50,16 +53,18 @@ export default async function NosotrosPage() {
         ))}
       </div>
 
-      <div className="bg-brand-700 rounded-2xl p-8 text-center text-white">
-        <h2 className="text-xl font-bold mb-2">¿Tienes alguna pregunta?</h2>
-        <p className="text-brand-100 mb-6 text-sm">Estamos aquí para ayudarte.</p>
-        <Link
-          href="/contacto"
-          className="inline-flex items-center gap-2 bg-white text-brand-700 font-semibold px-8 py-3 rounded-full hover:bg-brand-50 transition-colors"
-        >
-          Contáctanos
-        </Link>
-      </div>
+      {cta.enabled && (
+        <div className="bg-brand-700 rounded-2xl p-8 text-center text-white">
+          <h2 className="text-xl font-bold mb-2">{cta.title}</h2>
+          <p className="text-brand-100 mb-6 text-sm">{cta.description}</p>
+          <Link
+            href={cta.buttonUrl}
+            className="inline-flex items-center gap-2 bg-white text-brand-700 font-semibold px-8 py-3 rounded-full hover:bg-brand-50 transition-colors"
+          >
+            {cta.buttonText}
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

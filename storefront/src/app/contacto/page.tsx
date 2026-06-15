@@ -5,13 +5,18 @@ import { prisma } from '@/lib/prisma'
 import { Mail, Phone, MapPin } from 'lucide-react'
 
 const DEFAULT_CONTACT = { email: 'contacto@landbruck.cl', phone: '', address: 'Santiago, Chile' }
+const DEFAULT_WHATSAPP = { enabled: true, title: '¿Prefieres WhatsApp?', description: 'Respondemos rápido, de lunes a viernes.', buttonText: 'Escribir por WhatsApp', phone: '56912345678' }
 
 export default async function ContactoPage() {
   const configs = await prisma.siteConfig.findMany()
   const configMap = Object.fromEntries(configs.map(c => [c.key, c.value as Record<string, unknown>]))
+
   const sections = configMap.sections as { contacto?: boolean } | undefined
   if (sections?.contacto === false) redirect('/')
-  const contact = { ...DEFAULT_CONTACT, ...((configMap.contact ?? {}) as Record<string, string>) }
+
+  const contactRaw = (configMap.contact ?? {}) as Record<string, unknown>
+  const contact = { ...DEFAULT_CONTACT, ...(contactRaw as Record<string, string>) }
+  const whatsapp = { ...DEFAULT_WHATSAPP, ...((contactRaw.whatsapp ?? {}) as Record<string, unknown>) } as typeof DEFAULT_WHATSAPP
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-16">
@@ -56,18 +61,20 @@ export default async function ContactoPage() {
         )}
       </div>
 
-      <div className="bg-brand-700 rounded-2xl p-8 text-center text-white">
-        <h2 className="text-xl font-bold mb-2">¿Prefieres WhatsApp?</h2>
-        <p className="text-brand-100 mb-6 text-sm">Respondemos rápido, de lunes a viernes.</p>
-        <a
-          href={`https://wa.me/${contact.phone?.replace(/\D/g, '') || '56912345678'}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 bg-white text-brand-700 font-semibold px-8 py-3 rounded-full hover:bg-brand-50 transition-colors"
-        >
-          Escribir por WhatsApp
-        </a>
-      </div>
+      {whatsapp.enabled && (
+        <div className="bg-brand-700 rounded-2xl p-8 text-center text-white">
+          <h2 className="text-xl font-bold mb-2">{whatsapp.title}</h2>
+          <p className="text-brand-100 mb-6 text-sm">{whatsapp.description}</p>
+          <a
+            href={`https://wa.me/${String(whatsapp.phone).replace(/\D/g, '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-white text-brand-700 font-semibold px-8 py-3 rounded-full hover:bg-brand-50 transition-colors"
+          >
+            {whatsapp.buttonText}
+          </a>
+        </div>
+      )}
     </div>
   )
 }

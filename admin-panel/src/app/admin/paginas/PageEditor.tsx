@@ -66,6 +66,16 @@ export default function PageEditor({ config }: { config: Config }) {
   // Categories
   const [cats, setCats] = useState<CategoryConfig[]>(config.homepageCategories ?? [])
 
+  // WhatsApp (contacto)
+  const DEFAULT_WHATSAPP = { enabled: true, title: '¿Prefieres WhatsApp?', description: 'Respondemos rápido, de lunes a viernes.', buttonText: 'Escribir por WhatsApp', phone: '56912345678' }
+  const contactExt = config.contact as typeof config.contact & { whatsapp?: typeof DEFAULT_WHATSAPP }
+  const [whatsapp, setWhatsapp] = useState({ ...DEFAULT_WHATSAPP, ...(contactExt.whatsapp ?? {}) })
+
+  // CTA Nosotros
+  const DEFAULT_ABOUT_CTA = { enabled: true, title: '¿Tienes alguna pregunta?', description: 'Estamos aquí para ayudarte.', buttonText: 'Contáctanos', buttonUrl: '/contacto' }
+  const aboutExt = config.about as typeof config.about & { cta?: typeof DEFAULT_ABOUT_CTA }
+  const [aboutCta, setAboutCta] = useState({ ...DEFAULT_ABOUT_CTA, ...(aboutExt.cta ?? {}) })
+
   const { register, handleSubmit } = useForm({ defaultValues: config })
 
   /* ── Handlers ── */
@@ -120,8 +130,8 @@ export default function PageEditor({ config }: { config: Config }) {
       post('heroSlides', slides),
       post('sections', sections),
       post('homepageCategories', cats),
-      post('about', data.about),
-      post('contact', data.contact),
+      post('about', { ...data.about, cta: aboutCta }),
+      post('contact', { ...data.contact, whatsapp }),
     ])
     setSaved(true); setTimeout(() => setSaved(false), 2000)
   }
@@ -304,6 +314,26 @@ export default function PageEditor({ config }: { config: Config }) {
           <>
             <Field label="Título" {...register('about.title')} />
             <Field label="Contenido" {...register('about.content')} textarea rows={6} />
+
+            <div className="pt-4 border-t border-gray-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Sección llamada a la acción</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Banner al final de la página Nosotros</p>
+                </div>
+                <Toggle checked={aboutCta.enabled} onChange={v => setAboutCta(s => ({ ...s, enabled: v }))} />
+              </div>
+              {aboutCta.enabled && (
+                <div className="space-y-3">
+                  <SlideField label="Título" value={aboutCta.title} onChange={e => setAboutCta(s => ({ ...s, title: e.target.value }))} />
+                  <SlideField label="Descripción" value={aboutCta.description} onChange={e => setAboutCta(s => ({ ...s, description: e.target.value }))} />
+                  <div className="grid grid-cols-2 gap-3">
+                    <SlideField label="Texto del botón" value={aboutCta.buttonText} onChange={e => setAboutCta(s => ({ ...s, buttonText: e.target.value }))} />
+                    <SlideField label="URL del botón" value={aboutCta.buttonUrl} onChange={e => setAboutCta(s => ({ ...s, buttonUrl: e.target.value }))} placeholder="/contacto" />
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
 
@@ -313,6 +343,24 @@ export default function PageEditor({ config }: { config: Config }) {
             <Field label="Email" {...register('contact.email')} />
             <Field label="Teléfono" {...register('contact.phone')} />
             <Field label="Dirección" {...register('contact.address')} />
+
+            <div className="pt-4 border-t border-gray-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Sección WhatsApp</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Banner de WhatsApp al final de la página Contacto</p>
+                </div>
+                <Toggle checked={whatsapp.enabled} onChange={v => setWhatsapp(s => ({ ...s, enabled: v }))} />
+              </div>
+              {whatsapp.enabled && (
+                <div className="space-y-3">
+                  <SlideField label="Título" value={whatsapp.title} onChange={e => setWhatsapp(s => ({ ...s, title: e.target.value }))} />
+                  <SlideField label="Descripción" value={whatsapp.description} onChange={e => setWhatsapp(s => ({ ...s, description: e.target.value }))} />
+                  <SlideField label="Texto del botón" value={whatsapp.buttonText} onChange={e => setWhatsapp(s => ({ ...s, buttonText: e.target.value }))} />
+                  <SlideField label="Número de WhatsApp (sin +)" value={whatsapp.phone} onChange={e => setWhatsapp(s => ({ ...s, phone: e.target.value }))} placeholder="56912345678" />
+                </div>
+              )}
+            </div>
           </>
         )}
 
