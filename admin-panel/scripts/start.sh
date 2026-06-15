@@ -1,7 +1,13 @@
 #!/bin/sh
-echo "==> Running prisma db push..."
-npx prisma db push --accept-data-loss
-echo "==> Creating admin user..."
-node scripts/create-admin.js
 echo "==> Starting Next.js server..."
-exec npx next start -p 3001 -H 0.0.0.0
+npx next start -p 3001 -H 0.0.0.0 &
+NEXT_PID=$!
+
+echo "==> Running prisma db push..."
+npx prisma db push --accept-data-loss 2>&1 || echo "DB push failed"
+
+echo "==> Creating admin user..."
+node scripts/create-admin.js 2>&1 || echo "Create admin failed"
+
+echo "==> Setup complete"
+wait $NEXT_PID
