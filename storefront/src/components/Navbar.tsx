@@ -10,6 +10,7 @@ interface LogoConfig { type: 'text' | 'image'; value: string }
 const navLinks = [
   { href: '/', label: 'Inicio' },
   { href: '/productos', label: 'Productos' },
+  { href: '/nosotros', label: 'Nosotros' },
   { href: '/contacto', label: 'Contacto' },
 ]
 
