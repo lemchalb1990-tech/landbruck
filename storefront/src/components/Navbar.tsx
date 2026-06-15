@@ -6,15 +6,17 @@ import { useState } from 'react'
 import { useCart } from '@/context/CartContext'
 
 interface LogoConfig { type: 'text' | 'image'; value: string }
+interface NavItem { href: string; label: string }
 
-const navLinks = [
+const DEFAULT_NAV_LINKS: NavItem[] = [
   { href: '/', label: 'Inicio' },
   { href: '/productos', label: 'Productos' },
   { href: '/nosotros', label: 'Nosotros' },
   { href: '/contacto', label: 'Contacto' },
 ]
 
-export default function Navbar({ logo }: { logo?: LogoConfig }) {
+export default function Navbar({ logo, navItems }: { logo?: LogoConfig; navItems?: NavItem[] }) {
+  const navLinks = navItems && navItems.length > 0 ? navItems : DEFAULT_NAV_LINKS
   const [menuOpen, setMenuOpen] = useState(false)
   const { count } = useCart()
 

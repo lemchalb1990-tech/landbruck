@@ -96,6 +96,17 @@ model SiteConfig {
   value Json
 }
 
+model MenuItem {
+  id       Int        @id @default(autoincrement())
+  label    String
+  url      String
+  order    Int        @default(0)
+  visible  Boolean    @default(true)
+  parentId Int?
+  parent   MenuItem?  @relation("MenuChildren", fields: [parentId], references: [id])
+  children MenuItem[] @relation("MenuChildren")
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED
