@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
 
+# Allow overriding DATABASE_URL via LANDBRUCK_DB_URL (not baked by Nixpacks)
+if [ -n "$LANDBRUCK_DB_URL" ]; then
+  export DATABASE_URL="$LANDBRUCK_DB_URL"
+fi
+
 trap 'kill $NEXT_PID 2>/dev/null; exit 0' TERM INT
 
 echo "==> Running prisma db push..."
