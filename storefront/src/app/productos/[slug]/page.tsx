@@ -33,7 +33,7 @@ export default function ProductoPage({ params }: { params: { slug: string } }) {
       id: product.id,
       name: product.name,
       price: product.price,
-      image: product.images[0] ?? '/placeholder.jpg',
+      image: product.images[0] ?? '/placeholder.svg',
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
@@ -43,7 +43,7 @@ export default function ProductoPage({ params }: { params: { slug: string } }) {
     return <div className="max-w-4xl mx-auto px-4 py-20 text-center text-gray-400">Cargando...</div>
   }
 
-  const image = product.images[selectedImage] ?? '/placeholder.jpg'
+  const image = product.images[selectedImage] ?? '/placeholder.svg'
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
