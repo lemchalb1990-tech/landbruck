@@ -87,6 +87,12 @@ model OrderItem {
   price     Decimal @db.Decimal(10, 2)
 }
 
+model SiteConfig {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value Json
+}
+
 enum OrderStatus {
   PENDING
   CONFIRMED
