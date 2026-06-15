@@ -3,19 +3,23 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import Image from 'next/image'
 import {
-  Upload, Plus, Trash2, ChevronDown, ChevronUp,
+  Upload, Plus, Trash2, ChevronDown, ChevronUp, Phone,
   Sprout, Leaf, Wrench, FlaskConical, Sun, Droplets, Package, TreePine, Hammer,
   Award, Users, Star, Heart, ShieldCheck, Truck, CheckCircle,
+  Instagram, Facebook, Youtube, MessageCircle,
 } from 'lucide-react'
 
-interface AboutValue { id: number; icon: string; title: string; desc: string; color: string }
+interface AboutValue  { id: number; icon: string; title: string; desc: string; color: string }
+interface Benefit     { id: number; icon: string; title: string; desc: string; color: string }
+interface Testimonial { id: number; name: string; role: string; text: string; rating: number }
+interface SocialConfig { facebook: string; instagram: string; tiktok: string; youtube: string; whatsapp: string }
 interface Logo { type: 'text' | 'image'; value: string }
 interface SiteInfo { name: string; description: string; favicon: string }
 export interface Slide { id: number; image: string; tag: string; title: string; subtitle: string; cta: string; href: string }
 export interface CategoryConfig { id: number; name: string; slug: string; icon: string; color: string; active: boolean; isNew?: boolean }
 export interface SectionsConfig {
   hero: boolean; categories: boolean; featured: boolean; benefits: boolean; cta: boolean
-  nosotros: boolean; contacto: boolean
+  nosotros: boolean; contacto: boolean; testimonios: boolean
 }
 interface Config {
   logo: Logo
@@ -24,6 +28,9 @@ interface Config {
   sections: SectionsConfig
   about: { title: string; content: string }
   contact: { email: string; phone: string; address: string }
+  benefits: Benefit[]
+  testimonials: Testimonial[]
+  social: SocialConfig
 }
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -32,6 +39,10 @@ const ICON_MAP: Record<string, React.ElementType> = {
 
 const ABOUT_ICON_MAP: Record<string, React.ElementType> = {
   Sprout, Award, Users, Leaf, Star, Heart, ShieldCheck, Package, Truck, CheckCircle,
+}
+
+const BENEFIT_ICON_MAP: Record<string, React.ElementType> = {
+  Truck, ShieldCheck, Phone, Sprout, Star, Award, Users, Heart, CheckCircle, Package, Leaf,
 }
 
 const ABOUT_COLOR_OPTIONS: Record<string, { label: string; bg: string; text: string }> = {
@@ -57,11 +68,27 @@ const COLOR_OPTIONS: Record<string, { label: string; bg: string; text: string }>
 }
 
 const DEFAULT_SECTIONS: SectionsConfig = {
-  hero: true, categories: true, featured: true, benefits: true, cta: true, nosotros: true, contacto: true,
+  hero: true, categories: true, featured: true, benefits: true, cta: true,
+  nosotros: true, contacto: true, testimonios: true,
 }
 
+const DEFAULT_BENEFITS: Benefit[] = [
+  { id: 1, icon: 'Truck',       title: 'Envío a todo Chile',   desc: 'Despacho con Starken desde $2.990. Gratis sobre $50.000.', color: 'brand'  },
+  { id: 2, icon: 'Sprout',      title: 'Calidad garantizada',  desc: 'Productos seleccionados por expertos agrícolas.',          color: 'green'  },
+  { id: 3, icon: 'ShieldCheck', title: 'Compra 100% segura',   desc: 'Pago protegido y devolución sin preguntas.',               color: 'blue'   },
+  { id: 4, icon: 'Phone',       title: 'Asesoría gratis',      desc: 'Consúltanos por WhatsApp antes de comprar.',               color: 'amber'  },
+]
+
+const DEFAULT_TESTIMONIALS: Testimonial[] = [
+  { id: 1, name: 'María González', role: 'Huertero, Valparaíso', text: 'Excelente calidad en las semillas. Mi huerto nunca había producido tanto. Totalmente recomendado.', rating: 5 },
+  { id: 2, name: 'Carlos Muñoz',   role: 'Agricultor, Rancagua', text: 'El servicio al cliente es increíble. Me asesoraron perfectamente para mi tipo de suelo y clima.',    rating: 5 },
+  { id: 3, name: 'Ana Torres',     role: 'Jardín urbano, Santiago', text: 'Llegó rápido y bien embalado. Las plantas aromáticas están creciendo muy bien desde el primer día.', rating: 4 },
+]
+
+const DEFAULT_SOCIAL: SocialConfig = { facebook: '', instagram: '', tiktok: '', youtube: '', whatsapp: '' }
+
 export default function PageEditor({ config }: { config: Config }) {
-  const [activeTab, setActiveTab] = useState<'logo' | 'hero' | 'about' | 'contact' | 'sections' | 'categories'>('logo')
+  const [activeTab, setActiveTab] = useState<'logo' | 'hero' | 'about' | 'contact' | 'sections' | 'categories' | 'benefits' | 'testimonials' | 'social'>('logo')
   const [saved, setSaved] = useState(false)
 
   // Logo
@@ -86,11 +113,9 @@ export default function PageEditor({ config }: { config: Config }) {
     fetch('/api/categorias').then(r => r.json()).then((data: CategoryConfig[]) => setCats(data))
   }, [])
 
-  // Nosotros — campos básicos (controlados para asegurar valores del DB)
+  // Nosotros
   const [aboutTitle, setAboutTitle] = useState(config.about.title ?? 'Sobre Landbruck')
   const [aboutContent, setAboutContent] = useState(config.about.content || 'Somos una empresa chilena dedicada a ofrecer semillas y productos agrícolas de calidad para tu huerto, jardín y campo.')
-
-  // Nosotros — defaults
   const DEFAULT_ABOUT_CTA = { enabled: true, title: '¿Tienes alguna pregunta?', description: 'Estamos aquí para ayudarte.', buttonText: 'Contáctanos', buttonUrl: '/contacto' }
   const DEFAULT_ABOUT_VALUES: AboutValue[] = [
     { id: 1, icon: 'Sprout', title: 'Calidad en semillas', desc: 'Selección rigurosa de variedades adaptadas al clima chileno.', color: 'green' },
@@ -102,15 +127,22 @@ export default function PageEditor({ config }: { config: Config }) {
   const [aboutValues, setAboutValues] = useState<AboutValue[]>(aboutExt.values ?? DEFAULT_ABOUT_VALUES)
   const [aboutCta, setAboutCta] = useState({ ...DEFAULT_ABOUT_CTA, ...(aboutExt.cta ?? {}) })
 
-  // Contacto — campos básicos (controlados)
+  // Contacto
   const [contactEmail, setContactEmail] = useState(config.contact.email || 'contacto@landbruck.cl')
   const [contactPhone, setContactPhone] = useState(config.contact.phone || '')
   const [contactAddress, setContactAddress] = useState(config.contact.address || 'Santiago, Chile')
-
-  // WhatsApp (contacto)
   const DEFAULT_WHATSAPP = { enabled: true, title: '¿Prefieres WhatsApp?', description: 'Respondemos rápido, de lunes a viernes.', buttonText: 'Escribir por WhatsApp', phone: '56912345678' }
   const contactExt = config.contact as typeof config.contact & { whatsapp?: typeof DEFAULT_WHATSAPP }
   const [whatsapp, setWhatsapp] = useState({ ...DEFAULT_WHATSAPP, ...(contactExt.whatsapp ?? {}) })
+
+  // Benefits
+  const [benefits, setBenefits] = useState<Benefit[]>(config.benefits ?? DEFAULT_BENEFITS)
+
+  // Testimonials
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(config.testimonials ?? DEFAULT_TESTIMONIALS)
+
+  // Social
+  const [social, setSocial] = useState<SocialConfig>({ ...DEFAULT_SOCIAL, ...(config.social ?? {}) })
 
   const { handleSubmit } = useForm({ defaultValues: config })
 
@@ -205,6 +237,9 @@ export default function PageEditor({ config }: { config: Config }) {
       post('sections', sections),
       post('about', { title: aboutTitle, content: aboutContent, values: aboutValues, cta: aboutCta }),
       post('contact', { email: contactEmail, phone: contactPhone, address: contactAddress, whatsapp }),
+      post('benefits', benefits),
+      post('testimonials', testimonials),
+      post('social', social),
       syncMenuPages(sections),
       ...cats.map(saveCat),
       ...deletedCatIds.map(id => fetch(`/api/categorias/${id}`, { method: 'DELETE' })),
@@ -218,12 +253,15 @@ export default function PageEditor({ config }: { config: Config }) {
     fetch('/api/site-config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key, value }) })
 
   const tabs = [
-    { key: 'logo',       label: 'Logo' },
-    { key: 'hero',       label: 'Hero / Inicio' },
-    { key: 'about',      label: 'Nosotros' },
-    { key: 'contact',    label: 'Contacto' },
-    { key: 'sections',   label: 'Secciones' },
-    { key: 'categories', label: 'Categorías' },
+    { key: 'logo',         label: 'Logo' },
+    { key: 'hero',         label: 'Hero / Inicio' },
+    { key: 'benefits',     label: 'Beneficios' },
+    { key: 'testimonials', label: 'Testimonios' },
+    { key: 'about',        label: 'Nosotros' },
+    { key: 'contact',      label: 'Contacto' },
+    { key: 'social',       label: 'Redes sociales' },
+    { key: 'sections',     label: 'Secciones' },
+    { key: 'categories',   label: 'Categorías' },
   ] as const
 
   return (
@@ -282,24 +320,20 @@ export default function PageEditor({ config }: { config: Config }) {
                 </label>
               </div>
             )}
-            {/* ── Información del sitio ── */}
             <div className="pt-4 border-t border-gray-100 space-y-3">
               <h3 className="text-sm font-semibold text-gray-700">Información del sitio</h3>
               <p className="text-xs text-gray-400">Aparece en la pestaña del navegador y en resultados de búsqueda.</p>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del sitio</label>
                 <input className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
                   value={siteInfo.name} onChange={e => setSiteInfo(s => ({ ...s, name: e.target.value }))} placeholder="Landbruck" />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Eslogan / descripción corta</label>
                 <input className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
                   value={siteInfo.description} onChange={e => setSiteInfo(s => ({ ...s, description: e.target.value }))} placeholder="Semillas y productos agrícolas" />
                 <p className="text-xs text-gray-400 mt-0.5">Pestaña: <span className="font-medium">{siteInfo.name || 'Nombre'} — {siteInfo.description || 'Eslogan'}</span></p>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Favicon (ícono del navegador)</label>
                 {siteInfo.favicon && (
@@ -387,13 +421,117 @@ export default function PageEditor({ config }: { config: Config }) {
           </div>
         )}
 
+        {/* ── Beneficios ── */}
+        {activeTab === 'benefits' && (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">Los 4 íconos que destacan las ventajas del sitio (envío, calidad, seguridad, asesoría).</p>
+            {benefits.map((ben, index) => {
+              const Icon = BENEFIT_ICON_MAP[ben.icon] ?? Truck
+              const c = ABOUT_COLOR_OPTIONS[ben.color] ?? ABOUT_COLOR_OPTIONS.brand
+              return (
+                <div key={ben.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center ${c.bg} ${c.text}`}>
+                      <Icon size={18} />
+                    </div>
+                    <input value={ben.title}
+                      onChange={e => setBenefits(p => p.map((b, i) => i === index ? { ...b, title: e.target.value } : b))}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" placeholder="Título" />
+                    <button type="button" onClick={() => setBenefits(p => p.filter((_, i) => i !== index))}
+                      className="p-1.5 text-red-400 hover:text-red-600 rounded transition-colors shrink-0"><Trash2 size={15} /></button>
+                  </div>
+                  <textarea value={ben.desc} rows={2}
+                    onChange={e => setBenefits(p => p.map((b, i) => i === index ? { ...b, desc: e.target.value } : b))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" placeholder="Descripción breve" />
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">Ícono:</span>
+                      <select value={ben.icon}
+                        onChange={e => setBenefits(p => p.map((b, i) => i === index ? { ...b, icon: e.target.value } : b))}
+                        className="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-brand-600">
+                        {Object.keys(BENEFIT_ICON_MAP).map(k => <option key={k} value={k}>{k}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">Color:</span>
+                      <div className="flex gap-1">
+                        {Object.entries(ABOUT_COLOR_OPTIONS).map(([key, { bg }]) => (
+                          <button key={key} type="button" title={key}
+                            onClick={() => setBenefits(p => p.map((b, i) => i === index ? { ...b, color: key } : b))}
+                            className={`w-5 h-5 rounded-full ${bg} border-2 transition-all ${ben.color === key ? 'border-gray-600 scale-110' : 'border-transparent'}`} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+            <button type="button"
+              onClick={() => setBenefits(p => [...p, { id: Date.now(), icon: 'Truck', title: 'Nuevo beneficio', desc: '', color: 'brand' }])}
+              className="flex items-center justify-center gap-2 w-full text-sm font-medium text-brand-600 hover:text-brand-700 border border-dashed border-brand-300 hover:border-brand-500 px-4 py-2.5 rounded-lg transition-colors">
+              <Plus size={16} />Agregar beneficio
+            </button>
+          </div>
+        )}
+
+        {/* ── Testimonios ── */}
+        {activeTab === 'testimonials' && (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">Comentarios de clientes que aparecen en la página de inicio.</p>
+            {testimonials.map((t, index) => (
+              <div key={t.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex-1 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Nombre</label>
+                        <input value={t.name}
+                          onChange={e => setTestimonials(p => p.map((x, i) => i === index ? { ...x, name: e.target.value } : x))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" placeholder="Nombre del cliente" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Rol / Ubicación</label>
+                        <input value={t.role}
+                          onChange={e => setTestimonials(p => p.map((x, i) => i === index ? { ...x, role: e.target.value } : x))}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" placeholder="Huertero, Santiago" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Testimonio</label>
+                      <textarea value={t.text} rows={2}
+                        onChange={e => setTestimonials(p => p.map((x, i) => i === index ? { ...x, text: e.target.value } : x))}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" placeholder="Texto del testimonio..." />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">Calificación:</span>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map(n => (
+                          <button key={n} type="button"
+                            onClick={() => setTestimonials(p => p.map((x, i) => i === index ? { ...x, rating: n } : x))}>
+                            <Star size={18} className={n <= t.rating ? 'text-amber-400 fill-amber-400' : 'text-gray-300'} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => setTestimonials(p => p.filter((_, i) => i !== index))}
+                    className="p-1.5 text-red-400 hover:text-red-600 rounded transition-colors shrink-0 mt-1"><Trash2 size={15} /></button>
+                </div>
+              </div>
+            ))}
+            <button type="button"
+              onClick={() => setTestimonials(p => [...p, { id: Date.now(), name: '', role: '', text: '', rating: 5 }])}
+              className="flex items-center justify-center gap-2 w-full text-sm font-medium text-brand-600 hover:text-brand-700 border border-dashed border-brand-300 hover:border-brand-500 px-4 py-2.5 rounded-lg transition-colors">
+              <Plus size={16} />Agregar testimonio
+            </button>
+          </div>
+        )}
+
         {/* ── Nosotros ── */}
         {activeTab === 'about' && (
           <>
             <Field label="Título de la página" value={aboutTitle} onChange={e => setAboutTitle((e.target as HTMLInputElement).value)} />
             <Field label="Descripción / contenido" value={aboutContent} onChange={e => setAboutContent((e.target as HTMLTextAreaElement).value)} textarea rows={6} />
-
-            {/* Tarjetas de valores */}
             <div className="pt-4 border-t border-gray-100 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -444,7 +582,6 @@ export default function PageEditor({ config }: { config: Config }) {
                 <Plus size={16} />Agregar tarjeta
               </button>
             </div>
-
             <div className="pt-4 border-t border-gray-100 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -473,7 +610,6 @@ export default function PageEditor({ config }: { config: Config }) {
             <Field label="Email" value={contactEmail} onChange={e => setContactEmail((e.target as HTMLInputElement).value)} />
             <Field label="Teléfono" value={contactPhone} onChange={e => setContactPhone((e.target as HTMLInputElement).value)} />
             <Field label="Dirección" value={contactAddress} onChange={e => setContactAddress((e.target as HTMLInputElement).value)} />
-
             <div className="pt-4 border-t border-gray-100 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
@@ -494,6 +630,50 @@ export default function PageEditor({ config }: { config: Config }) {
           </>
         )}
 
+        {/* ── Redes sociales ── */}
+        {activeTab === 'social' && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">Ingresa las URLs completas de cada red social. Los que tengan URL aparecerán en el footer del sitio.</p>
+            <div className="space-y-3">
+              {([
+                { key: 'instagram', label: 'Instagram', icon: Instagram, placeholder: 'https://instagram.com/tutienda' },
+                { key: 'facebook',  label: 'Facebook',  icon: Facebook,  placeholder: 'https://facebook.com/tutienda' },
+                { key: 'youtube',   label: 'YouTube',   icon: Youtube,   placeholder: 'https://youtube.com/@tutienda' },
+                { key: 'tiktok',    label: 'TikTok',    icon: null,      placeholder: 'https://tiktok.com/@tutienda' },
+                { key: 'whatsapp',  label: 'WhatsApp',  icon: MessageCircle, placeholder: 'https://wa.me/56912345678' },
+              ] as const).map(({ key, label, icon: Icon, placeholder }) => (
+                <div key={key} className="flex items-center gap-3">
+                  <div className="w-9 h-9 shrink-0 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
+                    {Icon
+                      ? <Icon size={18} />
+                      : <svg viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V9.13a8.25 8.25 0 004.83 1.56V7.25a4.86 4.86 0 01-1.06-.56z"/></svg>
+                    }
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+                    <input
+                      type="url"
+                      value={social[key]}
+                      onChange={e => setSocial(s => ({ ...s, [key]: e.target.value }))}
+                      placeholder={placeholder}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
+                    />
+                  </div>
+                  {social[key] && (
+                    <button type="button" onClick={() => setSocial(s => ({ ...s, [key]: '' }))}
+                      className="p-1.5 text-gray-300 hover:text-red-500 rounded transition-colors shrink-0 mt-4">
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <p className="text-sm text-blue-700">Los íconos aparecerán en el footer del sitio cuando tengan una URL configurada.</p>
+            </div>
+          </div>
+        )}
+
         {/* ── Secciones ── */}
         {activeTab === 'sections' && (
           <div className="space-y-3">
@@ -504,12 +684,13 @@ export default function PageEditor({ config }: { config: Config }) {
               <SectionRow label="Categorías" desc="Grilla de categorías de productos" checked={sections.categories} onChange={v => setSections(s => ({ ...s, categories: v }))} />
               <SectionRow label="Productos destacados" desc="Productos marcados como destacados" checked={sections.featured} onChange={v => setSections(s => ({ ...s, featured: v }))} />
               <SectionRow label="Beneficios" desc="Íconos con ventajas (envío, calidad, seguridad...)" checked={sections.benefits} onChange={v => setSections(s => ({ ...s, benefits: v }))} />
-              <SectionRow label="Banner WhatsApp" desc="CTA al final de la portada" checked={sections.cta} onChange={v => setSections(s => ({ ...s, cta: v }))} />
+              <SectionRow label="Testimonios" desc="Comentarios de clientes satisfechos" checked={sections.testimonios} onChange={v => setSections(s => ({ ...s, testimonios: v }))} />
+              <SectionRow label="Banner CTA" desc="Banner de llamada a la acción al final del inicio" checked={sections.cta} onChange={v => setSections(s => ({ ...s, cta: v }))} />
             </div>
             <div className="space-y-2 pt-2 border-t border-gray-100">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 pt-1">Páginas</p>
-              <SectionRow label="Página Nosotros" desc="La página /nosotros" checked={sections.nosotros} onChange={v => setSections(s => ({ ...s, nosotros: v }))} />
-              <SectionRow label="Página Contacto" desc="La página /contacto" checked={sections.contacto} onChange={v => setSections(s => ({ ...s, contacto: v }))} />
+              <SectionRow label="Página Nosotros" desc="La página /nosotros (también afecta el menú)" checked={sections.nosotros} onChange={v => setSections(s => ({ ...s, nosotros: v }))} />
+              <SectionRow label="Página Contacto" desc="La página /contacto (también afecta el menú)" checked={sections.contacto} onChange={v => setSections(s => ({ ...s, contacto: v }))} />
             </div>
           </div>
         )}
@@ -523,7 +704,6 @@ export default function PageEditor({ config }: { config: Config }) {
               const c = COLOR_OPTIONS[cat.color] ?? COLOR_OPTIONS.green
               return (
                 <div key={cat.id} className={`border rounded-lg p-4 space-y-3 transition-colors ${cat.active ? 'border-gray-200' : 'border-gray-100 bg-gray-50 opacity-60'}`}>
-                  {/* Fila superior: toggle + icono + nombre + slug */}
                   <div className="flex items-center gap-3">
                     <Toggle checked={cat.active} onChange={v => updateCat(index, 'active', v)} />
                     <div className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center ${c.bg} ${c.text}`}>
@@ -536,7 +716,6 @@ export default function PageEditor({ config }: { config: Config }) {
                     <button type="button" onClick={() => deleteCat(cat)}
                       className="p-1.5 text-red-400 hover:text-red-600 rounded transition-colors shrink-0"><Trash2 size={15} /></button>
                   </div>
-                  {/* Fila inferior: icono + color */}
                   <div className="flex items-center gap-4 pl-12">
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-500">Ícono:</span>

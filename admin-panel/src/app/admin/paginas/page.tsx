@@ -10,16 +10,35 @@ const DEFAULT_SLIDES = [
 ]
 
 const DEFAULT_SECTIONS = {
-  hero: true, categories: true, featured: true, benefits: true, cta: true, nosotros: true, contacto: true,
+  hero: true, categories: true, featured: true, benefits: true, cta: true,
+  nosotros: true, contacto: true, testimonios: true,
 }
+
+const DEFAULT_BENEFITS = [
+  { id: 1, icon: 'Truck',       title: 'Envío a todo Chile',   desc: 'Despacho con Starken desde $2.990. Gratis sobre $50.000.', color: 'brand'  },
+  { id: 2, icon: 'Sprout',      title: 'Calidad garantizada',  desc: 'Productos seleccionados por expertos agrícolas.',          color: 'green'  },
+  { id: 3, icon: 'ShieldCheck', title: 'Compra 100% segura',   desc: 'Pago protegido y devolución sin preguntas.',               color: 'blue'   },
+  { id: 4, icon: 'Phone',       title: 'Asesoría gratis',      desc: 'Consúltanos por WhatsApp antes de comprar.',               color: 'amber'  },
+]
+
+const DEFAULT_TESTIMONIALS = [
+  { id: 1, name: 'María González', role: 'Huertero, Valparaíso', text: 'Excelente calidad en las semillas. Mi huerto nunca había producido tanto. Totalmente recomendado.', rating: 5 },
+  { id: 2, name: 'Carlos Muñoz',   role: 'Agricultor, Rancagua', text: 'El servicio al cliente es increíble. Me asesoraron perfectamente para mi tipo de suelo y clima.', rating: 5 },
+  { id: 3, name: 'Ana Torres',     role: 'Jardín urbano, Santiago', text: 'Llegó rápido y bien embalado. Las plantas aromáticas están creciendo muy bien desde el primer día.', rating: 4 },
+]
+
+const DEFAULT_SOCIAL = { facebook: '', instagram: '', tiktok: '', youtube: '', whatsapp: '' }
 
 const DEFAULT_CONFIG = {
   logo: { type: 'text' as const, value: 'Landbruck' },
   siteInfo: { name: 'Landbruck', description: 'Semillas y productos agrícolas para tu huerto y jardín.', favicon: '' },
   heroSlides: DEFAULT_SLIDES,
   sections: DEFAULT_SECTIONS,
-  about: { title: 'Sobre Landbruck', content: 'Somos una empresa chilena dedicada a ofrecer semillas y productos agrícolas de calidad para tu huerto, jardín y campo.' },
-  contact: { email: 'contacto@landbruck.cl', phone: '', address: 'Santiago, Chile' },
+  about:    { title: 'Sobre Landbruck', content: 'Somos una empresa chilena dedicada a ofrecer semillas y productos agrícolas de calidad para tu huerto, jardín y campo.' },
+  contact:  { email: 'contacto@landbruck.cl', phone: '', address: 'Santiago, Chile' },
+  benefits:     DEFAULT_BENEFITS,
+  testimonials: DEFAULT_TESTIMONIALS,
+  social:       DEFAULT_SOCIAL,
 }
 
 export default async function PaginasPage() {
@@ -28,10 +47,13 @@ export default async function PaginasPage() {
   const merged = {
     ...DEFAULT_CONFIG,
     ...configMap,
-    sections: { ...DEFAULT_SECTIONS, ...((configMap.sections as object) ?? {}) },
-    siteInfo: { ...DEFAULT_CONFIG.siteInfo, ...((configMap.siteInfo as object) ?? {}) },
-    about:   { ...DEFAULT_CONFIG.about,   ...((configMap.about   as object) ?? {}) },
-    contact: { ...DEFAULT_CONFIG.contact, ...((configMap.contact as object) ?? {}) },
+    sections:     { ...DEFAULT_SECTIONS,             ...((configMap.sections     as object) ?? {}) },
+    siteInfo:     { ...DEFAULT_CONFIG.siteInfo,      ...((configMap.siteInfo     as object) ?? {}) },
+    about:        { ...DEFAULT_CONFIG.about,          ...((configMap.about        as object) ?? {}) },
+    contact:      { ...DEFAULT_CONFIG.contact,        ...((configMap.contact      as object) ?? {}) },
+    benefits:     (configMap.benefits     as typeof DEFAULT_BENEFITS     | undefined) ?? DEFAULT_BENEFITS,
+    testimonials: (configMap.testimonials as typeof DEFAULT_TESTIMONIALS | undefined) ?? DEFAULT_TESTIMONIALS,
+    social:       { ...DEFAULT_SOCIAL,               ...((configMap.social       as object) ?? {}) },
   }
 
   return (
