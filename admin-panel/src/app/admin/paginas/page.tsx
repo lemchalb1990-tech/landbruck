@@ -13,19 +13,11 @@ const DEFAULT_SECTIONS = {
   hero: true, categories: true, featured: true, benefits: true, cta: true, nosotros: true, contacto: true,
 }
 
-const DEFAULT_CATEGORIES = [
-  { id: 1, name: 'Semillas',      slug: 'semillas',      icon: 'Sprout',      color: 'green',   active: true },
-  { id: 2, name: 'Herramientas',  slug: 'herramientas',  icon: 'Wrench',      color: 'amber',   active: true },
-  { id: 3, name: 'Fertilizantes', slug: 'fertilizantes', icon: 'FlaskConical',color: 'blue',    active: true },
-  { id: 4, name: 'Insumos',       slug: 'insumos',       icon: 'Leaf',        color: 'emerald', active: true },
-]
-
 const DEFAULT_CONFIG = {
   logo: { type: 'text' as const, value: 'Landbruck' },
   siteInfo: { name: 'Landbruck', description: 'Semillas y productos agrícolas para tu huerto y jardín.', favicon: '' },
   heroSlides: DEFAULT_SLIDES,
   sections: DEFAULT_SECTIONS,
-  homepageCategories: DEFAULT_CATEGORIES,
   about: { title: 'Sobre Landbruck', content: 'Somos una empresa chilena dedicada a ofrecer semillas y productos agrícolas de calidad para tu huerto, jardín y campo.' },
   contact: { email: 'contacto@landbruck.cl', phone: '', address: 'Santiago, Chile' },
 }

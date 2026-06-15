@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import Image from 'next/image'
 import {
@@ -12,7 +12,7 @@ interface AboutValue { id: number; icon: string; title: string; desc: string; co
 interface Logo { type: 'text' | 'image'; value: string }
 interface SiteInfo { name: string; description: string; favicon: string }
 export interface Slide { id: number; image: string; tag: string; title: string; subtitle: string; cta: string; href: string }
-export interface CategoryConfig { id: number; name: string; slug: string; icon: string; color: string; active: boolean }
+export interface CategoryConfig { id: number; name: string; slug: string; icon: string; color: string; active: boolean; isNew?: boolean }
 export interface SectionsConfig {
   hero: boolean; categories: boolean; featured: boolean; benefits: boolean; cta: boolean
   nosotros: boolean; contacto: boolean
@@ -22,7 +22,6 @@ interface Config {
   siteInfo: SiteInfo
   heroSlides: Slide[]
   sections: SectionsConfig
-  homepageCategories: CategoryConfig[]
   about: { title: string; content: string }
   contact: { email: string; phone: string; address: string }
 }
@@ -80,8 +79,12 @@ export default function PageEditor({ config }: { config: Config }) {
   // Sections
   const [sections, setSections] = useState<SectionsConfig>({ ...DEFAULT_SECTIONS, ...(config.sections ?? {}) })
 
-  // Categories
-  const [cats, setCats] = useState<CategoryConfig[]>(config.homepageCategories ?? [])
+  // Categories — cargadas desde la DB (fuente única de verdad)
+  const [cats, setCats] = useState<CategoryConfig[]>([])
+  const [deletedCatIds, setDeletedCatIds] = useState<number[]>([])
+  useEffect(() => {
+    fetch('/api/categorias').then(r => r.json()).then((data: CategoryConfig[]) => setCats(data))
+  }, [])
 
   // Nosotros — campos básicos (controlados para asegurar valores del DB)
   const [aboutTitle, setAboutTitle] = useState(config.about.title ?? 'Sobre Landbruck')
@@ -151,10 +154,29 @@ export default function PageEditor({ config }: { config: Config }) {
   }
 
   const updateCat = (i: number, field: keyof CategoryConfig, v: string | number | boolean) =>
-    setCats(prev => prev.map((c, idx) => idx === i ? { ...c, [field]: v } : c))
+    setCats(prev => prev.map((c, idx) => {
+      if (idx !== i) return c
+      const updated = { ...c, [field]: v }
+      if (field === 'name' && typeof v === 'string')
+        updated.slug = v.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      return updated
+    }))
 
   const addCat = () =>
-    setCats(prev => [...prev, { id: Date.now(), name: 'Nueva categoría', slug: 'nueva-categoria', icon: 'Sprout', color: 'green', active: true }])
+    setCats(prev => [...prev, { id: Date.now(), name: 'Nueva categoría', slug: 'nueva-categoria', icon: 'Sprout', color: 'green', active: true, isNew: true }])
+
+  const deleteCat = (cat: CategoryConfig) => {
+    setCats(p => p.filter(c => c.id !== cat.id))
+    if (!cat.isNew) setDeletedCatIds(p => [...p, cat.id])
+  }
+
+  const saveCat = (cat: CategoryConfig) => {
+    const body = JSON.stringify({ name: cat.name, slug: cat.slug, icon: cat.icon, color: cat.color, active: cat.active })
+    const headers = { 'Content-Type': 'application/json' }
+    return cat.isNew
+      ? fetch('/api/categorias', { method: 'POST', headers, body })
+      : fetch(`/api/categorias/${cat.id}`, { method: 'PATCH', headers, body })
+  }
 
   const onSubmit = async () => {
     await Promise.all([
@@ -162,10 +184,13 @@ export default function PageEditor({ config }: { config: Config }) {
       post('siteInfo', siteInfo),
       post('heroSlides', slides),
       post('sections', sections),
-      post('homepageCategories', cats),
       post('about', { title: aboutTitle, content: aboutContent, values: aboutValues, cta: aboutCta }),
       post('contact', { email: contactEmail, phone: contactPhone, address: contactAddress, whatsapp }),
+      ...cats.map(saveCat),
+      ...deletedCatIds.map(id => fetch(`/api/categorias/${id}`, { method: 'DELETE' })),
     ])
+    setDeletedCatIds([])
+    setCats(c => c.map(cat => ({ ...cat, isNew: false })))
     setSaved(true); setTimeout(() => setSaved(false), 2000)
   }
 
@@ -488,7 +513,7 @@ export default function PageEditor({ config }: { config: Config }) {
                       className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" placeholder="Nombre" />
                     <input value={cat.slug} onChange={e => updateCat(index, 'slug', e.target.value)}
                       className="w-32 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" placeholder="slug" />
-                    <button type="button" onClick={() => setCats(p => p.filter((_, i) => i !== index))}
+                    <button type="button" onClick={() => deleteCat(cat)}
                       className="p-1.5 text-red-400 hover:text-red-600 rounded transition-colors shrink-0"><Trash2 size={15} /></button>
                   </div>
                   {/* Fila inferior: icono + color */}

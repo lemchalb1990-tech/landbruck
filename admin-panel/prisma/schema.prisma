@@ -24,6 +24,9 @@ model Category {
   id        Int       @id @default(autoincrement())
   name      String
   slug      String    @unique
+  icon      String    @default("Sprout")
+  color     String    @default("green")
+  active    Boolean   @default(true)
   products  Product[]
   createdAt DateTime  @default(now())
 }

@@ -6,7 +6,7 @@ import ProductCard from '@/components/ProductCard'
 import HeroCarousel, { Slide } from '@/components/HeroCarousel'
 import { Sprout, Leaf, Wrench, FlaskConical, Sun, Droplets, Package, TreePine, Hammer, Truck, ShieldCheck, Phone } from 'lucide-react'
 
-interface CategoryConfig { id: number; name: string; slug: string; icon: string; color: string; active: boolean }
+interface CategoryConfig { id: number; name: string; slug: string; icon: string; color: string }
 interface SectionsConfig { hero: boolean; categories: boolean; featured: boolean; benefits: boolean; cta: boolean }
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -24,13 +24,6 @@ const COLOR_MAP: Record<string, string> = {
   teal:    'bg-teal-50 text-teal-700 border-teal-200 hover:border-teal-400',
 }
 
-const DEFAULT_CATEGORIES: CategoryConfig[] = [
-  { id: 1, name: 'Semillas',      slug: 'semillas',      icon: 'Sprout',       color: 'green',   active: true },
-  { id: 2, name: 'Herramientas',  slug: 'herramientas',  icon: 'Wrench',       color: 'amber',   active: true },
-  { id: 3, name: 'Fertilizantes', slug: 'fertilizantes', icon: 'FlaskConical', color: 'blue',    active: true },
-  { id: 4, name: 'Insumos',       slug: 'insumos',       icon: 'Leaf',         color: 'emerald', active: true },
-]
-
 const DEFAULT_SECTIONS: SectionsConfig = { hero: true, categories: true, featured: true, benefits: true, cta: true }
 
 const benefits = [
@@ -41,21 +34,20 @@ const benefits = [
 ]
 
 async function getPageData() {
-  const [products, configs] = await Promise.all([
+  const [products, configs, categories] = await Promise.all([
     prisma.product.findMany({ where: { featured: true, active: true }, take: 8, orderBy: { createdAt: 'desc' } }),
-    prisma.siteConfig.findMany({ where: { key: { in: ['heroSlides', 'sections', 'homepageCategories'] } } }),
+    prisma.siteConfig.findMany({ where: { key: { in: ['heroSlides', 'sections'] } } }),
+    prisma.category.findMany({ where: { active: true }, orderBy: { name: 'asc' } }),
   ])
   const configMap = Object.fromEntries(configs.map(c => [c.key, c.value]))
-  return { products, configMap }
+  return { products, configMap, categories }
 }
 
 export default async function HomePage() {
-  const { products, configMap } = await getPageData()
+  const { products, configMap, categories } = await getPageData()
 
   const heroSlides = configMap.heroSlides as unknown as Slide[] | undefined
   const sections: SectionsConfig = { ...DEFAULT_SECTIONS, ...((configMap.sections as unknown as Partial<SectionsConfig>) ?? {}) }
-  const catConfig = (configMap.homepageCategories as unknown as CategoryConfig[] | undefined) ?? DEFAULT_CATEGORIES
-  const activeCategories = catConfig.filter(c => c.active)
 
   return (
     <>
@@ -63,7 +55,7 @@ export default async function HomePage() {
       {sections.hero && <HeroCarousel slides={heroSlides} />}
 
       {/* Categorías */}
-      {sections.categories && activeCategories.length > 0 && (
+      {sections.categories && categories.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-14">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -73,7 +65,7 @@ export default async function HomePage() {
             <Link href="/productos" className="text-sm font-medium text-brand-600 hover:text-brand-700 hover:underline">Ver todo →</Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {activeCategories.map(cat => {
+            {categories.map(cat => {
               const Icon = ICON_MAP[cat.icon] ?? Leaf
               const colorClass = COLOR_MAP[cat.color] ?? COLOR_MAP.green
               return (
