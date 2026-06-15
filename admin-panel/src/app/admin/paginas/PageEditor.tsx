@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 
 interface Logo { type: 'text' | 'image'; value: string }
+interface SiteInfo { name: string; description: string; favicon: string }
 export interface Slide { id: number; image: string; tag: string; title: string; subtitle: string; cta: string; href: string }
 export interface CategoryConfig { id: number; name: string; slug: string; icon: string; color: string; active: boolean }
 export interface SectionsConfig {
@@ -16,6 +17,7 @@ export interface SectionsConfig {
 }
 interface Config {
   logo: Logo
+  siteInfo: SiteInfo
   heroSlides: Slide[]
   sections: SectionsConfig
   homepageCategories: CategoryConfig[]
@@ -49,6 +51,9 @@ export default function PageEditor({ config }: { config: Config }) {
   // Logo
   const [logo, setLogo] = useState<Logo>(config.logo)
   const [uploading, setUploading] = useState(false)
+  const DEFAULT_SITE_INFO: SiteInfo = { name: 'Landbruck', description: 'Semillas y productos agrícolas para tu huerto y jardín.', favicon: '' }
+  const [siteInfo, setSiteInfo] = useState<SiteInfo>({ ...DEFAULT_SITE_INFO, ...config.siteInfo })
+  const [uploadingFavicon, setUploadingFavicon] = useState(false)
 
   // Hero slides
   const [slides, setSlides] = useState<Slide[]>(config.heroSlides ?? [])
@@ -72,6 +77,16 @@ export default function PageEditor({ config }: { config: Config }) {
       const { url } = await fetch('/api/upload', { method: 'POST', body: form }).then(r => r.json())
       setLogo({ type: 'image', value: url })
     } finally { setUploading(false) }
+  }
+
+  const handleFaviconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return
+    setUploadingFavicon(true)
+    try {
+      const form = new FormData(); form.append('file', file)
+      const { url } = await fetch('/api/upload', { method: 'POST', body: form }).then(r => r.json())
+      setSiteInfo(s => ({ ...s, favicon: url }))
+    } finally { setUploadingFavicon(false) }
   }
 
   const handleSlideImageUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,6 +116,7 @@ export default function PageEditor({ config }: { config: Config }) {
   const onSubmit = async (data: Config) => {
     await Promise.all([
       post('logo', logo),
+      post('siteInfo', siteInfo),
       post('heroSlides', slides),
       post('sections', sections),
       post('homepageCategories', cats),
@@ -178,6 +194,45 @@ export default function PageEditor({ config }: { config: Config }) {
                 </label>
               </div>
             )}
+            {/* ── Información del sitio ── */}
+            <div className="pt-4 border-t border-gray-100 space-y-3">
+              <h3 className="text-sm font-semibold text-gray-700">Información del sitio</h3>
+              <p className="text-xs text-gray-400">Aparece en la pestaña del navegador y en resultados de búsqueda.</p>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del sitio</label>
+                <input className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
+                  value={siteInfo.name} onChange={e => setSiteInfo(s => ({ ...s, name: e.target.value }))} placeholder="Landbruck" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Eslogan / descripción corta</label>
+                <input className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
+                  value={siteInfo.description} onChange={e => setSiteInfo(s => ({ ...s, description: e.target.value }))} placeholder="Semillas y productos agrícolas" />
+                <p className="text-xs text-gray-400 mt-0.5">Pestaña: <span className="font-medium">{siteInfo.name || 'Nombre'} — {siteInfo.description || 'Eslogan'}</span></p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Favicon (ícono del navegador)</label>
+                {siteInfo.favicon && (
+                  <div className="flex items-center gap-2 mb-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={siteInfo.favicon} alt="favicon" className="w-8 h-8 object-contain border border-gray-200 rounded p-0.5 bg-white" />
+                    <span className="text-xs text-gray-400">Vista previa del ícono</span>
+                  </div>
+                )}
+                <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 text-xs text-blue-700 space-y-0.5 mb-2">
+                  <p className="font-semibold">Resolución recomendada</p>
+                  <p>• Tamaño: <strong>32 × 32 px</strong> o <strong>512 × 512 px</strong></p>
+                  <p>• Formato: <strong>PNG</strong> con fondo transparente</p>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer bg-gray-50 hover:bg-gray-100 border border-dashed border-gray-300 rounded-lg px-4 py-3 w-fit text-sm text-gray-600 transition-colors">
+                  <Upload size={16} />
+                  {uploadingFavicon ? 'Subiendo...' : siteInfo.favicon ? 'Cambiar ícono' : 'Subir ícono'}
+                  <input type="file" accept="image/png,image/x-icon,image/svg+xml" className="hidden" onChange={handleFaviconUpload} disabled={uploadingFavicon} />
+                </label>
+              </div>
+            </div>
           </div>
         )}
 

@@ -22,6 +22,7 @@ const DEFAULT_CATEGORIES = [
 
 const DEFAULT_CONFIG = {
   logo: { type: 'text' as const, value: 'Landbruck' },
+  siteInfo: { name: 'Landbruck', description: 'Semillas y productos agrícolas para tu huerto y jardín.', favicon: '' },
   heroSlides: DEFAULT_SLIDES,
   sections: DEFAULT_SECTIONS,
   homepageCategories: DEFAULT_CATEGORIES,
@@ -36,6 +37,7 @@ export default async function PaginasPage() {
     ...DEFAULT_CONFIG,
     ...configMap,
     sections: { ...DEFAULT_SECTIONS, ...((configMap.sections as object) ?? {}) },
+    siteInfo: { ...DEFAULT_CONFIG.siteInfo, ...((configMap.siteInfo as object) ?? {}) },
   }
 
   return (

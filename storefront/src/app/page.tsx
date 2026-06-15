@@ -9,7 +9,7 @@ import { Sprout, Leaf, Wrench, FlaskConical, Sun, Droplets, Package, TreePine, H
 interface CategoryConfig { id: number; name: string; slug: string; icon: string; color: string; active: boolean }
 interface SectionsConfig { hero: boolean; categories: boolean; featured: boolean; benefits: boolean; cta: boolean }
 
-const ICON_MAP: Record<string, React.ComponentType<{ size?: number }>> = {
+const ICON_MAP: Record<string, React.ElementType> = {
   Sprout, Leaf, Wrench, FlaskConical, Sun, Droplets, Package, TreePine, Hammer,
 }
 
@@ -52,9 +52,9 @@ async function getPageData() {
 export default async function HomePage() {
   const { products, configMap } = await getPageData()
 
-  const heroSlides = configMap.heroSlides as Slide[] | undefined
-  const sections: SectionsConfig = { ...DEFAULT_SECTIONS, ...((configMap.sections as Partial<SectionsConfig>) ?? {}) }
-  const catConfig = (configMap.homepageCategories as CategoryConfig[] | undefined) ?? DEFAULT_CATEGORIES
+  const heroSlides = configMap.heroSlides as unknown as Slide[] | undefined
+  const sections: SectionsConfig = { ...DEFAULT_SECTIONS, ...((configMap.sections as unknown as Partial<SectionsConfig>) ?? {}) }
+  const catConfig = (configMap.homepageCategories as unknown as CategoryConfig[] | undefined) ?? DEFAULT_CATEGORIES
   const activeCategories = catConfig.filter(c => c.active)
 
   return (
