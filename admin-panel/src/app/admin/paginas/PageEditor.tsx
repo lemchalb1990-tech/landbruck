@@ -99,12 +99,17 @@ export default function PageEditor({ config }: { config: Config }) {
   const [aboutValues, setAboutValues] = useState<AboutValue[]>(aboutExt.values ?? DEFAULT_ABOUT_VALUES)
   const [aboutCta, setAboutCta] = useState({ ...DEFAULT_ABOUT_CTA, ...(aboutExt.cta ?? {}) })
 
+  // Contacto — campos básicos (controlados)
+  const [contactEmail, setContactEmail] = useState(config.contact.email || 'contacto@landbruck.cl')
+  const [contactPhone, setContactPhone] = useState(config.contact.phone || '')
+  const [contactAddress, setContactAddress] = useState(config.contact.address || 'Santiago, Chile')
+
   // WhatsApp (contacto)
   const DEFAULT_WHATSAPP = { enabled: true, title: '¿Prefieres WhatsApp?', description: 'Respondemos rápido, de lunes a viernes.', buttonText: 'Escribir por WhatsApp', phone: '56912345678' }
   const contactExt = config.contact as typeof config.contact & { whatsapp?: typeof DEFAULT_WHATSAPP }
   const [whatsapp, setWhatsapp] = useState({ ...DEFAULT_WHATSAPP, ...(contactExt.whatsapp ?? {}) })
 
-  const { register, handleSubmit } = useForm({ defaultValues: config })
+  const { handleSubmit } = useForm({ defaultValues: config })
 
   /* ── Handlers ── */
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,7 +156,7 @@ export default function PageEditor({ config }: { config: Config }) {
   const addCat = () =>
     setCats(prev => [...prev, { id: Date.now(), name: 'Nueva categoría', slug: 'nueva-categoria', icon: 'Sprout', color: 'green', active: true }])
 
-  const onSubmit = async (data: Config) => {
+  const onSubmit = async () => {
     await Promise.all([
       post('logo', logo),
       post('siteInfo', siteInfo),
@@ -159,7 +164,7 @@ export default function PageEditor({ config }: { config: Config }) {
       post('sections', sections),
       post('homepageCategories', cats),
       post('about', { title: aboutTitle, content: aboutContent, values: aboutValues, cta: aboutCta }),
-      post('contact', { ...data.contact, whatsapp }),
+      post('contact', { email: contactEmail, phone: contactPhone, address: contactAddress, whatsapp }),
     ])
     setSaved(true); setTimeout(() => setSaved(false), 2000)
   }
@@ -420,9 +425,9 @@ export default function PageEditor({ config }: { config: Config }) {
         {/* ── Contacto ── */}
         {activeTab === 'contact' && (
           <>
-            <Field label="Email" {...register('contact.email')} />
-            <Field label="Teléfono" {...register('contact.phone')} />
-            <Field label="Dirección" {...register('contact.address')} />
+            <Field label="Email" value={contactEmail} onChange={e => setContactEmail((e.target as HTMLInputElement).value)} />
+            <Field label="Teléfono" value={contactPhone} onChange={e => setContactPhone((e.target as HTMLInputElement).value)} />
+            <Field label="Dirección" value={contactAddress} onChange={e => setContactAddress((e.target as HTMLInputElement).value)} />
 
             <div className="pt-4 border-t border-gray-100 space-y-3">
               <div className="flex items-center justify-between">
