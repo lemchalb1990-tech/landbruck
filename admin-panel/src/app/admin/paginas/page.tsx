@@ -38,6 +38,8 @@ export default async function PaginasPage() {
     ...configMap,
     sections: { ...DEFAULT_SECTIONS, ...((configMap.sections as object) ?? {}) },
     siteInfo: { ...DEFAULT_CONFIG.siteInfo, ...((configMap.siteInfo as object) ?? {}) },
+    about:   { ...DEFAULT_CONFIG.about,   ...((configMap.about   as object) ?? {}) },
+    contact: { ...DEFAULT_CONFIG.contact, ...((configMap.contact as object) ?? {}) },
   }
 
   return (

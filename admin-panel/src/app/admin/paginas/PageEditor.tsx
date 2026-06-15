@@ -83,25 +83,26 @@ export default function PageEditor({ config }: { config: Config }) {
   // Categories
   const [cats, setCats] = useState<CategoryConfig[]>(config.homepageCategories ?? [])
 
-  // WhatsApp (contacto)
-  const DEFAULT_WHATSAPP = { enabled: true, title: '¿Prefieres WhatsApp?', description: 'Respondemos rápido, de lunes a viernes.', buttonText: 'Escribir por WhatsApp', phone: '56912345678' }
-  const contactExt = config.contact as typeof config.contact & { whatsapp?: typeof DEFAULT_WHATSAPP }
-  const [whatsapp, setWhatsapp] = useState({ ...DEFAULT_WHATSAPP, ...(contactExt.whatsapp ?? {}) })
+  // Nosotros — campos básicos (controlados para asegurar valores del DB)
+  const [aboutTitle, setAboutTitle] = useState(config.about.title ?? 'Sobre Landbruck')
+  const [aboutContent, setAboutContent] = useState(config.about.content ?? '')
 
-  // Valores Nosotros
+  // Nosotros — defaults
+  const DEFAULT_ABOUT_CTA = { enabled: true, title: '¿Tienes alguna pregunta?', description: 'Estamos aquí para ayudarte.', buttonText: 'Contáctanos', buttonUrl: '/contacto' }
   const DEFAULT_ABOUT_VALUES: AboutValue[] = [
     { id: 1, icon: 'Sprout', title: 'Calidad en semillas', desc: 'Selección rigurosa de variedades adaptadas al clima chileno.', color: 'green' },
     { id: 2, icon: 'Award', title: 'Experiencia comprobada', desc: 'Años acompañando a agricultores y huerteros de todo Chile.', color: 'brand' },
     { id: 3, icon: 'Users', title: 'Atención personalizada', desc: 'Asesoría real antes y después de tu compra.', color: 'blue' },
     { id: 4, icon: 'Leaf', title: 'Compromiso con la tierra', desc: 'Promovemos prácticas sostenibles y responsables.', color: 'emerald' },
   ]
-  const aboutExtBase = config.about as typeof config.about & { values?: AboutValue[]; cta?: typeof DEFAULT_ABOUT_CTA }
-  const [aboutValues, setAboutValues] = useState<AboutValue[]>(aboutExtBase.values ?? DEFAULT_ABOUT_VALUES)
-
-  // CTA Nosotros
-  const DEFAULT_ABOUT_CTA = { enabled: true, title: '¿Tienes alguna pregunta?', description: 'Estamos aquí para ayudarte.', buttonText: 'Contáctanos', buttonUrl: '/contacto' }
-  const aboutExt = config.about as typeof config.about & { cta?: typeof DEFAULT_ABOUT_CTA }
+  const aboutExt = config.about as typeof config.about & { values?: AboutValue[]; cta?: typeof DEFAULT_ABOUT_CTA }
+  const [aboutValues, setAboutValues] = useState<AboutValue[]>(aboutExt.values ?? DEFAULT_ABOUT_VALUES)
   const [aboutCta, setAboutCta] = useState({ ...DEFAULT_ABOUT_CTA, ...(aboutExt.cta ?? {}) })
+
+  // WhatsApp (contacto)
+  const DEFAULT_WHATSAPP = { enabled: true, title: '¿Prefieres WhatsApp?', description: 'Respondemos rápido, de lunes a viernes.', buttonText: 'Escribir por WhatsApp', phone: '56912345678' }
+  const contactExt = config.contact as typeof config.contact & { whatsapp?: typeof DEFAULT_WHATSAPP }
+  const [whatsapp, setWhatsapp] = useState({ ...DEFAULT_WHATSAPP, ...(contactExt.whatsapp ?? {}) })
 
   const { register, handleSubmit } = useForm({ defaultValues: config })
 
@@ -157,7 +158,7 @@ export default function PageEditor({ config }: { config: Config }) {
       post('heroSlides', slides),
       post('sections', sections),
       post('homepageCategories', cats),
-      post('about', { ...data.about, values: aboutValues, cta: aboutCta }),
+      post('about', { title: aboutTitle, content: aboutContent, values: aboutValues, cta: aboutCta }),
       post('contact', { ...data.contact, whatsapp }),
     ])
     setSaved(true); setTimeout(() => setSaved(false), 2000)
@@ -339,8 +340,8 @@ export default function PageEditor({ config }: { config: Config }) {
         {/* ── Nosotros ── */}
         {activeTab === 'about' && (
           <>
-            <Field label="Título de la página" {...register('about.title')} />
-            <Field label="Descripción / contenido" {...register('about.content')} textarea rows={6} />
+            <Field label="Título de la página" value={aboutTitle} onChange={e => setAboutTitle((e.target as HTMLInputElement).value)} />
+            <Field label="Descripción / contenido" value={aboutContent} onChange={e => setAboutContent((e.target as HTMLTextAreaElement).value)} textarea rows={6} />
 
             {/* Tarjetas de valores */}
             <div className="pt-4 border-t border-gray-100 space-y-3">
