@@ -26,7 +26,7 @@ const DEFAULT_CONFIG = {
   heroSlides: DEFAULT_SLIDES,
   sections: DEFAULT_SECTIONS,
   homepageCategories: DEFAULT_CATEGORIES,
-  about: { title: 'Sobre Landbruck', content: '' },
+  about: { title: 'Sobre Landbruck', content: 'Somos una empresa chilena dedicada a ofrecer semillas y productos agrícolas de calidad para tu huerto, jardín y campo.' },
   contact: { email: 'contacto@landbruck.cl', phone: '', address: 'Santiago, Chile' },
 }
 

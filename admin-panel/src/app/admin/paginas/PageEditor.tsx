@@ -85,7 +85,7 @@ export default function PageEditor({ config }: { config: Config }) {
 
   // Nosotros — campos básicos (controlados para asegurar valores del DB)
   const [aboutTitle, setAboutTitle] = useState(config.about.title ?? 'Sobre Landbruck')
-  const [aboutContent, setAboutContent] = useState(config.about.content ?? '')
+  const [aboutContent, setAboutContent] = useState(config.about.content || 'Somos una empresa chilena dedicada a ofrecer semillas y productos agrícolas de calidad para tu huerto, jardín y campo.')
 
   // Nosotros — defaults
   const DEFAULT_ABOUT_CTA = { enabled: true, title: '¿Tienes alguna pregunta?', description: 'Estamos aquí para ayudarte.', buttonText: 'Contáctanos', buttonUrl: '/contacto' }

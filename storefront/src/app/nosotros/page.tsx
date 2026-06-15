@@ -22,7 +22,7 @@ const COLOR_MAP: Record<string, string> = {
   orange:  'text-orange-600 bg-orange-50',
 }
 
-const DEFAULT_ABOUT = { title: 'Sobre Landbruck', content: '' }
+const DEFAULT_ABOUT = { title: 'Sobre Landbruck', content: 'Somos una empresa chilena dedicada a ofrecer semillas y productos agrícolas de calidad para tu huerto, jardín y campo.' }
 const DEFAULT_CTA = { enabled: true, title: '¿Tienes alguna pregunta?', description: 'Estamos aquí para ayudarte.', buttonText: 'Contáctanos', buttonUrl: '/contacto' }
 const DEFAULT_VALUES: AboutValue[] = [
   { id: 1, icon: 'Sprout', title: 'Calidad en semillas', desc: 'Selección rigurosa de variedades adaptadas al clima chileno.', color: 'green' },
@@ -46,13 +46,9 @@ export default async function NosotrosPage() {
     <div className="max-w-4xl mx-auto px-4 py-16">
       <div className="text-center mb-12">
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{about.title}</h1>
-        {about.content ? (
+        {about.content && (
           <p className="text-gray-600 mt-4 max-w-2xl mx-auto leading-relaxed whitespace-pre-line">
             {about.content}
-          </p>
-        ) : (
-          <p className="text-gray-500 mt-4 max-w-xl mx-auto">
-            Somos una empresa chilena dedicada a ofrecer semillas y productos agrícolas de calidad para tu huerto, jardín y campo.
           </p>
         )}
       </div>
