@@ -1,20 +1,42 @@
 'use client'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import Image from 'next/image'
+import { Upload } from 'lucide-react'
 
+interface Logo { type: 'text' | 'image'; value: string }
 interface Config {
+  logo: Logo
   hero: { title: string; subtitle: string; buttonText: string; buttonUrl: string }
   about: { title: string; content: string }
   contact: { email: string; phone: string; address: string }
 }
 
 export default function PageEditor({ config }: { config: Config }) {
-  const [activeTab, setActiveTab] = useState<'hero' | 'about' | 'contact'>('hero')
+  const [activeTab, setActiveTab] = useState<'logo' | 'hero' | 'about' | 'contact'>('logo')
   const [saved, setSaved] = useState(false)
+  const [logo, setLogo] = useState<Logo>(config.logo)
+  const [uploading, setUploading] = useState(false)
   const { register, handleSubmit } = useForm({ defaultValues: config })
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/upload', { method: 'POST', body: form })
+      const { url } = await res.json()
+      setLogo({ type: 'image', value: url })
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const onSubmit = async (data: Config) => {
     await Promise.all([
+      fetch('/api/site-config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'logo', value: logo }) }),
       fetch('/api/site-config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'hero', value: data.hero }) }),
       fetch('/api/site-config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'about', value: data.about }) }),
       fetch('/api/site-config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'contact', value: data.contact }) }),
@@ -24,6 +46,7 @@ export default function PageEditor({ config }: { config: Config }) {
   }
 
   const tabs = [
+    { key: 'logo', label: 'Logo' },
     { key: 'hero', label: 'Hero / Inicio' },
     { key: 'about', label: 'Nosotros' },
     { key: 'contact', label: 'Contacto' },
@@ -31,7 +54,7 @@ export default function PageEditor({ config }: { config: Config }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="flex gap-2 mb-5">
+      <div className="flex flex-wrap gap-2 mb-5">
         {tabs.map(t => (
           <button key={t.key} type="button" onClick={() => setActiveTab(t.key)}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === t.key ? 'bg-brand-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-brand-600'}`}>
@@ -41,6 +64,51 @@ export default function PageEditor({ config }: { config: Config }) {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+
+        {activeTab === 'logo' && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">Elige si el logo es un texto o una imagen.</p>
+
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setLogo({ type: 'text', value: logo.type === 'text' ? logo.value : 'Landbruck' })}
+                className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${logo.type === 'text' ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-gray-600 border-gray-200 hover:border-brand-600'}`}>
+                Texto
+              </button>
+              <button type="button" onClick={() => setLogo({ type: 'image', value: logo.type === 'image' ? logo.value : '' })}
+                className={`px-4 py-2 text-sm font-medium rounded-lg border transition-colors ${logo.type === 'image' ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-gray-600 border-gray-200 hover:border-brand-600'}`}>
+                Imagen
+              </button>
+            </div>
+
+            {logo.type === 'text' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Texto del logo</label>
+                <input
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600"
+                  value={logo.value}
+                  onChange={e => setLogo({ type: 'text', value: e.target.value })}
+                  placeholder="Landbruck"
+                />
+              </div>
+            )}
+
+            {logo.type === 'image' && (
+              <div className="space-y-3">
+                {logo.value && (
+                  <div className="relative h-20 w-48 bg-gray-50 border rounded-lg overflow-hidden">
+                    <Image src={logo.value} alt="Logo actual" fill className="object-contain p-2" />
+                  </div>
+                )}
+                <label className="flex items-center gap-2 cursor-pointer bg-gray-50 hover:bg-gray-100 border border-dashed border-gray-300 rounded-lg px-4 py-3 w-fit text-sm text-gray-600 transition-colors">
+                  <Upload size={16} />
+                  {uploading ? 'Subiendo...' : logo.value ? 'Cambiar imagen' : 'Subir imagen'}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploading} />
+                </label>
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'hero' && (
           <>
             <Field label="Título" {...register('hero.title')} />

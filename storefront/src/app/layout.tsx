@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import Navbar from '@/components/Navbar'
+import NavbarWrapper from '@/components/NavbarWrapper'
 import Footer from '@/components/Footer'
 import { CartProvider } from '@/context/CartContext'
 
@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="es">
       <body>
         <CartProvider>
-          <Navbar />
+          <NavbarWrapper />
           <main className="min-h-screen">{children}</main>
           <Footer />
         </CartProvider>

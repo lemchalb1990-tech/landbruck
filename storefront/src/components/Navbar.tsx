@@ -1,34 +1,48 @@
 'use client'
 import Link from 'next/link'
-import { ShoppingCart, User, Menu, X, Search } from 'lucide-react'
+import Image from 'next/image'
+import { ShoppingCart, User, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { useCart } from '@/context/CartContext'
 
-export default function Navbar() {
+interface LogoConfig { type: 'text' | 'image'; value: string }
+
+const navLinks = [
+  { href: '/', label: 'Inicio' },
+  { href: '/productos', label: 'Productos' },
+  { href: '/contacto', label: 'Contacto' },
+]
+
+export default function Navbar({ logo }: { logo?: LogoConfig }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const { count } = useCart()
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
-        <Link href="/" className="text-2xl font-bold text-brand-700">
-          Landbruck
+
+        {/* Logo */}
+        <Link href="/" className="flex items-center shrink-0">
+          {logo?.type === 'image' ? (
+            <Image src={logo.value} alt="Logo" width={140} height={40} className="object-contain h-10 w-auto" />
+          ) : (
+            <span className="text-2xl font-bold text-brand-700">{logo?.value || 'Landbruck'}</span>
+          )}
         </Link>
 
+        {/* Nav desktop */}
         <nav className="hidden md:flex gap-6 text-sm font-medium text-gray-600">
-          <Link href="/productos" className="hover:text-brand-600">Productos</Link>
-          <Link href="/productos?categoria=semillas" className="hover:text-brand-600">Semillas</Link>
-          <Link href="/productos?categoria=insumos" className="hover:text-brand-600">Insumos</Link>
+          {navLinks.map(l => (
+            <Link key={l.href} href={l.href} className="hover:text-brand-600 transition-colors">{l.label}</Link>
+          ))}
         </nav>
 
-        <div className="flex items-center gap-4">
-          <Link href="/buscar" className="text-gray-500 hover:text-brand-600">
-            <Search size={20} />
-          </Link>
-          <Link href="/cuenta" className="text-gray-500 hover:text-brand-600">
+        {/* Iconos */}
+        <div className="flex items-center gap-3">
+          <Link href="/cuenta" className="text-gray-500 hover:text-brand-600 transition-colors">
             <User size={20} />
           </Link>
-          <Link href="/carrito" className="relative text-gray-500 hover:text-brand-600">
+          <Link href="/carrito" className="relative text-gray-500 hover:text-brand-600 transition-colors">
             <ShoppingCart size={20} />
             {count > 0 && (
               <span className="absolute -top-2 -right-2 bg-brand-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
@@ -36,18 +50,32 @@ export default function Navbar() {
               </span>
             )}
           </Link>
-          <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
+          <button className="md:hidden text-gray-500" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </div>
 
+      {/* Menú móvil */}
       {menuOpen && (
-        <div className="md:hidden bg-white border-t px-4 py-4 flex flex-col gap-3 text-sm font-medium text-gray-700">
-          <Link href="/productos" onClick={() => setMenuOpen(false)}>Productos</Link>
-          <Link href="/productos?categoria=semillas" onClick={() => setMenuOpen(false)}>Semillas</Link>
-          <Link href="/productos?categoria=insumos" onClick={() => setMenuOpen(false)}>Insumos</Link>
-          <Link href="/cuenta" onClick={() => setMenuOpen(false)}>Mi cuenta</Link>
+        <div className="md:hidden bg-white border-t border-gray-100 px-4 py-3 flex flex-col gap-1">
+          {navLinks.map(l => (
+            <Link
+              key={l.href}
+              href={l.href}
+              onClick={() => setMenuOpen(false)}
+              className="py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+            >
+              {l.label}
+            </Link>
+          ))}
+          <Link
+            href="/cuenta"
+            onClick={() => setMenuOpen(false)}
+            className="py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+          >
+            Mi cuenta
+          </Link>
         </div>
       )}
     </header>

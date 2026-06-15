@@ -4,9 +4,10 @@ import { prisma } from '@/lib/prisma'
 import PageEditor from './PageEditor'
 
 const DEFAULT_CONFIG = {
+  logo: { type: 'text', value: 'Landbruck' },
   hero: { title: 'Semillas y productos agrícolas', subtitle: 'Todo lo que necesitas para tu huerto, jardín y cultivo. Envíos a todo Chile.', buttonText: 'Ver productos', buttonUrl: '/productos' },
   about: { title: 'Sobre Landbruck', content: '' },
-  contact: { email: 'contacto@landbruk.cl', phone: '', address: 'Santiago, Chile' },
+  contact: { email: 'contacto@landbruck.cl', phone: '', address: 'Santiago, Chile' },
 }
 
 export default async function PaginasPage() {
