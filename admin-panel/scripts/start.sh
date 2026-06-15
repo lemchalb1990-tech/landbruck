@@ -8,8 +8,8 @@ fi
 
 trap 'kill $NEXT_PID 2>/dev/null; exit 0' TERM INT
 
-echo "==> Running prisma db push..."
-npx prisma db push --accept-data-loss 2>&1 || echo "DB push warning (non-fatal)"
+echo "==> Running prisma migrate deploy..."
+npx prisma migrate deploy 2>&1 || echo "Migrate warning (non-fatal)"
 
 echo "==> Creating admin user..."
 node scripts/create-admin.js 2>&1 || echo "Create admin warning (non-fatal)"
