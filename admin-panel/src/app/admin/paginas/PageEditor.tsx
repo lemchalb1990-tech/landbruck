@@ -5,8 +5,10 @@ import Image from 'next/image'
 import {
   Upload, Plus, Trash2, ChevronDown, ChevronUp,
   Sprout, Leaf, Wrench, FlaskConical, Sun, Droplets, Package, TreePine, Hammer,
+  Award, Users, Star, Heart, ShieldCheck, Truck, CheckCircle,
 } from 'lucide-react'
 
+interface AboutValue { id: number; icon: string; title: string; desc: string; color: string }
 interface Logo { type: 'text' | 'image'; value: string }
 interface SiteInfo { name: string; description: string; favicon: string }
 export interface Slide { id: number; image: string; tag: string; title: string; subtitle: string; cta: string; href: string }
@@ -27,6 +29,21 @@ interface Config {
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Sprout, Leaf, Wrench, FlaskConical, Sun, Droplets, Package, TreePine, Hammer,
+}
+
+const ABOUT_ICON_MAP: Record<string, React.ElementType> = {
+  Sprout, Award, Users, Leaf, Star, Heart, ShieldCheck, Package, Truck, CheckCircle,
+}
+
+const ABOUT_COLOR_OPTIONS: Record<string, { label: string; bg: string; text: string }> = {
+  green:   { label: 'Verde',     bg: 'bg-green-100',   text: 'text-green-700' },
+  brand:   { label: 'Marca',     bg: 'bg-brand-100',   text: 'text-brand-700' },
+  blue:    { label: 'Azul',      bg: 'bg-blue-100',    text: 'text-blue-700' },
+  emerald: { label: 'Esmeralda', bg: 'bg-emerald-100', text: 'text-emerald-700' },
+  amber:   { label: 'Ámbar',     bg: 'bg-amber-100',   text: 'text-amber-700' },
+  red:     { label: 'Rojo',      bg: 'bg-red-100',     text: 'text-red-700' },
+  purple:  { label: 'Morado',    bg: 'bg-purple-100',  text: 'text-purple-700' },
+  orange:  { label: 'Naranja',   bg: 'bg-orange-100',  text: 'text-orange-700' },
 }
 
 const COLOR_OPTIONS: Record<string, { label: string; bg: string; text: string }> = {
@@ -70,6 +87,16 @@ export default function PageEditor({ config }: { config: Config }) {
   const DEFAULT_WHATSAPP = { enabled: true, title: '¿Prefieres WhatsApp?', description: 'Respondemos rápido, de lunes a viernes.', buttonText: 'Escribir por WhatsApp', phone: '56912345678' }
   const contactExt = config.contact as typeof config.contact & { whatsapp?: typeof DEFAULT_WHATSAPP }
   const [whatsapp, setWhatsapp] = useState({ ...DEFAULT_WHATSAPP, ...(contactExt.whatsapp ?? {}) })
+
+  // Valores Nosotros
+  const DEFAULT_ABOUT_VALUES: AboutValue[] = [
+    { id: 1, icon: 'Sprout', title: 'Calidad en semillas', desc: 'Selección rigurosa de variedades adaptadas al clima chileno.', color: 'green' },
+    { id: 2, icon: 'Award', title: 'Experiencia comprobada', desc: 'Años acompañando a agricultores y huerteros de todo Chile.', color: 'brand' },
+    { id: 3, icon: 'Users', title: 'Atención personalizada', desc: 'Asesoría real antes y después de tu compra.', color: 'blue' },
+    { id: 4, icon: 'Leaf', title: 'Compromiso con la tierra', desc: 'Promovemos prácticas sostenibles y responsables.', color: 'emerald' },
+  ]
+  const aboutExtBase = config.about as typeof config.about & { values?: AboutValue[]; cta?: typeof DEFAULT_ABOUT_CTA }
+  const [aboutValues, setAboutValues] = useState<AboutValue[]>(aboutExtBase.values ?? DEFAULT_ABOUT_VALUES)
 
   // CTA Nosotros
   const DEFAULT_ABOUT_CTA = { enabled: true, title: '¿Tienes alguna pregunta?', description: 'Estamos aquí para ayudarte.', buttonText: 'Contáctanos', buttonUrl: '/contacto' }
@@ -130,7 +157,7 @@ export default function PageEditor({ config }: { config: Config }) {
       post('heroSlides', slides),
       post('sections', sections),
       post('homepageCategories', cats),
-      post('about', { ...data.about, cta: aboutCta }),
+      post('about', { ...data.about, values: aboutValues, cta: aboutCta }),
       post('contact', { ...data.contact, whatsapp }),
     ])
     setSaved(true); setTimeout(() => setSaved(false), 2000)
@@ -312,8 +339,60 @@ export default function PageEditor({ config }: { config: Config }) {
         {/* ── Nosotros ── */}
         {activeTab === 'about' && (
           <>
-            <Field label="Título" {...register('about.title')} />
-            <Field label="Contenido" {...register('about.content')} textarea rows={6} />
+            <Field label="Título de la página" {...register('about.title')} />
+            <Field label="Descripción / contenido" {...register('about.content')} textarea rows={6} />
+
+            {/* Tarjetas de valores */}
+            <div className="pt-4 border-t border-gray-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">Tarjetas de valores</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Las 4 tarjetas que aparecen debajo del texto</p>
+                </div>
+              </div>
+              {aboutValues.map((val, index) => {
+                const Icon = ABOUT_ICON_MAP[val.icon] ?? Leaf
+                const c = ABOUT_COLOR_OPTIONS[val.color] ?? ABOUT_COLOR_OPTIONS.green
+                return (
+                  <div key={val.id} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center ${c.bg} ${c.text}`}>
+                        <Icon size={18} />
+                      </div>
+                      <input value={val.title} onChange={e => setAboutValues(p => p.map((v, i) => i === index ? { ...v, title: e.target.value } : v))}
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" placeholder="Título" />
+                      <button type="button" onClick={() => setAboutValues(p => p.filter((_, i) => i !== index))}
+                        className="p-1.5 text-red-400 hover:text-red-600 rounded transition-colors shrink-0"><Trash2 size={15} /></button>
+                    </div>
+                    <textarea value={val.desc} rows={2} onChange={e => setAboutValues(p => p.map((v, i) => i === index ? { ...v, desc: e.target.value } : v))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600" placeholder="Descripción" />
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Ícono:</span>
+                        <select value={val.icon} onChange={e => setAboutValues(p => p.map((v, i) => i === index ? { ...v, icon: e.target.value } : v))}
+                          className="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-brand-600">
+                          {Object.keys(ABOUT_ICON_MAP).map(k => <option key={k} value={k}>{k}</option>)}
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Color:</span>
+                        <div className="flex gap-1">
+                          {Object.entries(ABOUT_COLOR_OPTIONS).map(([key, { bg }]) => (
+                            <button key={key} type="button" title={key} onClick={() => setAboutValues(p => p.map((v, i) => i === index ? { ...v, color: key } : v))}
+                              className={`w-5 h-5 rounded-full ${bg} border-2 transition-all ${val.color === key ? 'border-gray-600 scale-110' : 'border-transparent'}`} />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+              <button type="button"
+                onClick={() => setAboutValues(p => [...p, { id: Date.now(), icon: 'Sprout', title: 'Nueva tarjeta', desc: '', color: 'green' }])}
+                className="flex items-center justify-center gap-2 w-full text-sm font-medium text-brand-600 hover:text-brand-700 border border-dashed border-brand-300 hover:border-brand-500 px-4 py-2.5 rounded-lg transition-colors">
+                <Plus size={16} />Agregar tarjeta
+              </button>
+            </div>
 
             <div className="pt-4 border-t border-gray-100 space-y-3">
               <div className="flex items-center justify-between">
