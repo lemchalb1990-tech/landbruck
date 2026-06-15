@@ -178,6 +178,25 @@ export default function PageEditor({ config }: { config: Config }) {
       : fetch(`/api/categorias/${cat.id}`, { method: 'PATCH', headers, body })
   }
 
+  const syncMenuPages = async (sects: SectionsConfig) => {
+    const items: Array<{ id: number; url: string }> = await fetch('/api/menu').then(r => r.json())
+    const mapping = [
+      { url: '/nosotros', visible: sects.nosotros },
+      { url: '/contacto', visible: sects.contacto },
+    ]
+    await Promise.all(
+      mapping.flatMap(({ url, visible }) => {
+        const item = items.find(i => i.url === url)
+        if (!item) return []
+        return [fetch(`/api/menu/${item.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visible }),
+        })]
+      })
+    )
+  }
+
   const onSubmit = async () => {
     await Promise.all([
       post('logo', logo),
@@ -186,6 +205,7 @@ export default function PageEditor({ config }: { config: Config }) {
       post('sections', sections),
       post('about', { title: aboutTitle, content: aboutContent, values: aboutValues, cta: aboutCta }),
       post('contact', { email: contactEmail, phone: contactPhone, address: contactAddress, whatsapp }),
+      syncMenuPages(sections),
       ...cats.map(saveCat),
       ...deletedCatIds.map(id => fetch(`/api/categorias/${id}`, { method: 'DELETE' })),
     ])
