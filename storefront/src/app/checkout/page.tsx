@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useCart } from '@/context/CartContext'
 import { useForm } from 'react-hook-form'
-import { CreditCard, Landmark } from 'lucide-react'
+import { CreditCard, Landmark, Truck } from 'lucide-react'
 
 interface CheckoutForm {
   name: string; email: string; phone: string; address: string; city: string
@@ -10,6 +10,9 @@ interface CheckoutForm {
 interface PaymentConfig {
   mercadopago: { enabled: boolean; publicKey: string }
   flow: { enabled: boolean }
+}
+interface ShippingConfig {
+  enabled: boolean; shippingCost: number; service: string
 }
 
 const PAYMENT_LABELS: Record<string, { label: string; desc: string }> = {
@@ -20,10 +23,11 @@ const PAYMENT_LABELS: Record<string, { label: string; desc: string }> = {
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart()
   const { register, handleSubmit, formState: { errors } } = useForm<CheckoutForm>()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [payConfig, setPayConfig] = useState<PaymentConfig | null>(null)
-  const [payMethod, setPayMethod] = useState<string>('')
+  const [loading, setLoading]       = useState(false)
+  const [error, setError]           = useState('')
+  const [payConfig, setPayConfig]   = useState<PaymentConfig | null>(null)
+  const [shipping, setShipping]     = useState<ShippingConfig | null>(null)
+  const [payMethod, setPayMethod]   = useState<string>('')
 
   useEffect(() => {
     fetch('/api/pagos/config').then(r => r.json()).then((data: PaymentConfig) => {
@@ -31,7 +35,11 @@ export default function CheckoutPage() {
       if (data.mercadopago?.enabled) setPayMethod('mercadopago')
       else if (data.flow?.enabled)   setPayMethod('flow')
     })
+    fetch('/api/envio/cotizar').then(r => r.json()).then(setShipping)
   }, [])
+
+  const shippingCost = shipping?.enabled ? (shipping.shippingCost ?? 0) : 0
+  const grandTotal   = total + shippingCost
 
   const enabled = payConfig
     ? [
@@ -47,7 +55,7 @@ export default function CheckoutPage() {
       const orderRes = await fetch('/api/pedidos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, items, paymentProvider: payMethod }),
+        body: JSON.stringify({ ...data, items, paymentProvider: payMethod, shippingCost }),
       })
       if (!orderRes.ok) throw new Error('Error al crear el pedido')
       const { id: orderId } = await orderRes.json()
@@ -149,11 +157,29 @@ export default function CheckoutPage() {
               </li>
             ))}
           </ul>
-          <div className="border-t pt-3 flex justify-between font-bold text-gray-900">
-            <span>Total</span>
-            <span>${total.toLocaleString('es-CL')}</span>
+          <div className="border-t pt-3 space-y-2">
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Subtotal</span>
+              <span>${total.toLocaleString('es-CL')}</span>
+            </div>
+            {shipping?.enabled && (
+              <div className="flex justify-between text-sm text-gray-600">
+                <span className="flex items-center gap-1.5">
+                  <Truck size={14} />
+                  Envío Starken
+                </span>
+                <span>
+                  {shippingCost === 0 ? 'Gratis' : `$${shippingCost.toLocaleString('es-CL')}`}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between font-bold text-gray-900 border-t pt-2">
+              <span>Total</span>
+              <span>${grandTotal.toLocaleString('es-CL')}</span>
+            </div>
           </div>
         </div>
+
       </div>
     </div>
   )

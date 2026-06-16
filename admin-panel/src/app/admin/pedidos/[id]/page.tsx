@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import UpdateOrderStatus from './UpdateOrderStatus'
+import StarkenDispatch from './StarkenDispatch'
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: 'Pendiente', CONFIRMED: 'Confirmado', SHIPPED: 'En camino',
@@ -12,11 +13,16 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 export default async function PedidoPage({ params }: { params: { id: string } }) {
-  const order = await prisma.order.findUnique({
-    where: { id: Number(params.id) },
-    include: { customer: true, items: { include: { product: true } } },
-  })
+  const [order, shippingConfig] = await Promise.all([
+    prisma.order.findUnique({
+      where: { id: Number(params.id) },
+      include: { customer: true, items: { include: { product: true } } },
+    }),
+    prisma.siteConfig.findUnique({ where: { key: 'shipping' } }),
+  ])
   if (!order) notFound()
+
+  const starkenEnabled = (shippingConfig?.value as { enabled?: boolean } | undefined)?.enabled ?? false
 
   return (
     <div className="max-w-3xl">
@@ -32,13 +38,17 @@ export default async function PedidoPage({ params }: { params: { id: string } })
         <div className="bg-white rounded-xl shadow-sm p-5">
           <h2 className="font-semibold text-gray-700 mb-3">Información</h2>
           <p className="text-sm text-gray-500">Fecha: {format(order.createdAt, "d 'de' MMMM yyyy", { locale: es })}</p>
+          {order.paymentProvider && (
+            <p className="text-sm text-gray-500">Pago: {order.paymentProvider}</p>
+          )}
           <p className="text-sm font-bold mt-2">Total: ${Number(order.total).toLocaleString('es-CL')}</p>
           <div className="mt-3">
             <UpdateOrderStatus orderId={order.id} currentStatus={order.status} />
           </div>
         </div>
       </div>
-      <div className="bg-white rounded-xl shadow-sm p-5">
+
+      <div className="bg-white rounded-xl shadow-sm p-5 mb-5">
         <h2 className="font-semibold text-gray-700 mb-3">Productos</h2>
         <table className="w-full text-sm">
           <thead className="border-b text-gray-500">
@@ -61,6 +71,17 @@ export default async function PedidoPage({ params }: { params: { id: string } })
           </tbody>
         </table>
       </div>
+
+      {starkenEnabled && (
+        <div className="bg-white rounded-xl shadow-sm p-5">
+          <h2 className="font-semibold text-gray-700 mb-3">Despacho Starken</h2>
+          <StarkenDispatch
+            orderId={order.id}
+            trackingNumber={order.trackingNumber ?? null}
+            trackingUrl={order.trackingUrl ?? null}
+          />
+        </div>
+      )}
     </div>
   )
 }

@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs'
 import { sendOrderConfirmation } from '@/lib/email'
 
 export async function POST(req: Request) {
-  const { name, email, phone, address, city, items, paymentProvider } = await req.json()
+  const { name, email, phone, address, city, items, paymentProvider, shippingCost = 0 } = await req.json()
 
   if (!items?.length) {
     return NextResponse.json({ error: 'No hay productos' }, { status: 400 })
@@ -25,10 +25,11 @@ export async function POST(req: Request) {
     })
   }
 
-  const total = items.reduce((sum: number, item: { id: number; quantity: number }) => {
+  const subtotal = items.reduce((sum: number, item: { id: number; quantity: number }) => {
     const product = products.find(p => p.id === item.id)
     return sum + (product ? Number(product.price) * item.quantity : 0)
   }, 0)
+  const total = subtotal + (Number(shippingCost) || 0)
 
   const order = await prisma.order.create({
     data: {
