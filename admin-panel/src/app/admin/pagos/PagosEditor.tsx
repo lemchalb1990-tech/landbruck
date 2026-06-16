@@ -5,6 +5,7 @@ import { useState } from 'react'
 interface MPConfig   { enabled: boolean; sandbox: boolean; publicKey: string; accessToken: string }
 interface FlowConfig { enabled: boolean; sandbox: boolean; apiKey: string;   secretKey: string }
 interface PaymentsConfig { mercadopago: MPConfig; flow: FlowConfig }
+interface EmailConfig { host: string; port: number; secure: boolean; user: string; pass: string; from: string }
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -16,7 +17,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 }
 
 function Field({ label, value, onChange, placeholder, type = 'text' }: {
-  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string
+  label: string; value: string | number; onChange: (v: string) => void; placeholder?: string; type?: string
 }) {
   return (
     <div>
@@ -28,28 +29,41 @@ function Field({ label, value, onChange, placeholder, type = 'text' }: {
   )
 }
 
-export default function PagosEditor({ payments: initial }: { payments: PaymentsConfig }) {
-  const [payments, setPayments] = useState(initial)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [error, setError] = useState('')
+export default function PagosEditor({ payments: initPay, email: initEmail }: {
+  payments: PaymentsConfig; email: EmailConfig
+}) {
+  const [payments, setPayments] = useState(initPay)
+  const [email, setEmail]       = useState(initEmail)
+  const [saving, setSaving]     = useState(false)
+  const [saved, setSaved]       = useState(false)
+  const [error, setError]       = useState('')
 
-  function updMP(field: keyof MPConfig, value: string | boolean) {
-    setPayments(p => ({ ...p, mercadopago: { ...p.mercadopago, [field]: value } }))
+  function updMP(field: keyof MPConfig, v: string | boolean) {
+    setPayments(p => ({ ...p, mercadopago: { ...p.mercadopago, [field]: v } }))
   }
-  function updFlow(field: keyof FlowConfig, value: string | boolean) {
-    setPayments(p => ({ ...p, flow: { ...p.flow, [field]: value } }))
+  function updFlow(field: keyof FlowConfig, v: string | boolean) {
+    setPayments(p => ({ ...p, flow: { ...p.flow, [field]: v } }))
+  }
+  function updEmail(field: keyof EmailConfig, v: string | boolean | number) {
+    setEmail(p => ({ ...p, [field]: v }))
+  }
+
+  async function post(key: string, value: unknown) {
+    return fetch('/api/site-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, value }),
+    })
   }
 
   async function save() {
     setSaving(true); setError('')
-    const res = await fetch('/api/site-config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: 'payments', value: payments }),
-    })
+    const [r1, r2] = await Promise.all([
+      post('payments', payments),
+      post('email', email),
+    ])
     setSaving(false)
-    if (!res.ok) { setError('Error al guardar'); return }
+    if (!r1.ok || !r2.ok) { setError('Error al guardar'); return }
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
@@ -73,15 +87,11 @@ export default function PagosEditor({ payments: initial }: { payments: PaymentsC
                 onChange={e => updMP('sandbox', e.target.checked)} className="rounded" />
               Modo sandbox (pruebas)
             </label>
-            <div className="grid grid-cols-1 gap-3">
-              <Field label="Public Key" value={payments.mercadopago.publicKey}
-                onChange={v => updMP('publicKey', v)} placeholder="APP_USR-xxxxxxxx..." />
-              <Field label="Access Token" value={payments.mercadopago.accessToken}
-                onChange={v => updMP('accessToken', v)} placeholder="APP_USR-xxxxxxxx..." type="password" />
-            </div>
-            <p className="text-xs text-gray-400">
-              Webhook URL: <code className="bg-gray-100 px-1 rounded">/api/webhooks/mercadopago</code>
-            </p>
+            <Field label="Public Key" value={payments.mercadopago.publicKey}
+              onChange={v => updMP('publicKey', v)} placeholder="APP_USR-..." />
+            <Field label="Access Token" value={payments.mercadopago.accessToken}
+              onChange={v => updMP('accessToken', v)} placeholder="APP_USR-..." type="password" />
+            <p className="text-xs text-gray-400">Webhook: <code className="bg-gray-100 px-1 rounded">/api/webhooks/mercadopago</code></p>
           </div>
         )}
       </div>
@@ -91,7 +101,7 @@ export default function PagosEditor({ payments: initial }: { payments: PaymentsC
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div>
             <p className="font-semibold text-gray-900">Flow</p>
-            <p className="text-xs text-gray-500 mt-0.5">Pagos con tarjeta de crédito/débito en Chile</p>
+            <p className="text-xs text-gray-500 mt-0.5">Tarjeta de crédito/débito en Chile</p>
           </div>
           <Toggle checked={payments.flow.enabled} onChange={v => updFlow('enabled', v)} />
         </div>
@@ -102,17 +112,34 @@ export default function PagosEditor({ payments: initial }: { payments: PaymentsC
                 onChange={e => updFlow('sandbox', e.target.checked)} className="rounded" />
               Modo sandbox (pruebas)
             </label>
-            <div className="grid grid-cols-1 gap-3">
-              <Field label="API Key" value={payments.flow.apiKey}
-                onChange={v => updFlow('apiKey', v)} placeholder="Tu API Key de Flow" />
-              <Field label="Secret Key" value={payments.flow.secretKey}
-                onChange={v => updFlow('secretKey', v)} placeholder="Tu Secret Key de Flow" type="password" />
-            </div>
-            <p className="text-xs text-gray-400">
-              URL Confirmación: <code className="bg-gray-100 px-1 rounded">/api/webhooks/flow</code>
-            </p>
+            <Field label="API Key"    value={payments.flow.apiKey}    onChange={v => updFlow('apiKey', v)}    placeholder="Tu API Key de Flow" />
+            <Field label="Secret Key" value={payments.flow.secretKey} onChange={v => updFlow('secretKey', v)} placeholder="Tu Secret Key de Flow" type="password" />
+            <p className="text-xs text-gray-400">Webhook: <code className="bg-gray-100 px-1 rounded">/api/webhooks/flow</code></p>
           </div>
         )}
+      </div>
+
+      {/* Email SMTP */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <p className="font-semibold text-gray-900">Notificaciones por email</p>
+          <p className="text-xs text-gray-500 mt-0.5">Se envía confirmación de pedido y credenciales al comprador</p>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Servidor SMTP" value={email.host} onChange={v => updEmail('host', v)} placeholder="smtp.gmail.com" />
+            <Field label="Puerto" value={email.port} onChange={v => updEmail('port', parseInt(v) || 587)} placeholder="587" type="number" />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <input type="checkbox" checked={email.secure}
+              onChange={e => updEmail('secure', e.target.checked)} className="rounded" />
+            SSL/TLS (puerto 465)
+          </label>
+          <Field label="Usuario / Email SMTP" value={email.user} onChange={v => updEmail('user', v)} placeholder="noreply@landbruck.cl" />
+          <Field label="Contraseña SMTP" value={email.pass} onChange={v => updEmail('pass', v)} placeholder="••••••••" type="password" />
+          <Field label="Remitente (From)" value={email.from} onChange={v => updEmail('from', v)} placeholder="contacto@landbruck.cl" />
+          <p className="text-xs text-gray-400">Para Gmail usa un <strong>App Password</strong> en tu cuenta Google.</p>
+        </div>
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { sendOrderConfirmation } from '@/lib/email'
 
 export async function POST(req: Request) {
   const { name, email, phone, address, city, items, paymentProvider } = await req.json()
@@ -13,10 +14,14 @@ export async function POST(req: Request) {
   const products = await prisma.product.findMany({ where: { id: { in: productIds } } })
 
   let customer = await prisma.customer.findUnique({ where: { email } })
+  let tempPassword: string | undefined
+  const isNewCustomer = !customer
+
   if (!customer) {
-    const tempPassword = await bcrypt.hash(Math.random().toString(36).slice(2), 10)
+    tempPassword = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)
+    const hashed = await bcrypt.hash(tempPassword, 10)
     customer = await prisma.customer.create({
-      data: { name, email, phone, address, city, password: tempPassword },
+      data: { name, email, phone, address, city, password: hashed },
     })
   }
 
@@ -27,7 +32,7 @@ export async function POST(req: Request) {
 
   const order = await prisma.order.create({
     data: {
-      customerId: customer.id,
+      customerId:      customer.id,
       total,
       address,
       city,
@@ -42,6 +47,27 @@ export async function POST(req: Request) {
       },
     },
   })
+
+  const siteConfig = await prisma.siteConfig.findMany({
+    where: { key: { in: ['siteInfo'] } },
+  })
+  const siteInfo = siteConfig.find(c => c.key === 'siteInfo')?.value as { name?: string } | undefined
+  const siteName = siteInfo?.name || 'Landbruck'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+
+  sendOrderConfirmation({
+    to:           email,
+    customerName: name,
+    orderId:      order.id,
+    total,
+    items: items.map((item: { id: number; quantity: number }) => {
+      const product = products.find(p => p.id === item.id)!
+      return { name: product.name, quantity: item.quantity, price: Number(product.price) }
+    }),
+    tempPassword: isNewCustomer ? tempPassword : undefined,
+    siteUrl,
+    siteName,
+  }).catch(e => console.error('[email]', e))
 
   return NextResponse.json({ id: order.id }, { status: 201 })
 }
