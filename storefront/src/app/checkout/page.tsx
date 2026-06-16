@@ -1,15 +1,20 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useCart } from '@/context/CartContext'
 import { useForm } from 'react-hook-form'
-import { useRouter } from 'next/navigation'
+import { CreditCard, Landmark } from 'lucide-react'
 
 interface CheckoutForm {
-  name: string
-  email: string
-  phone: string
-  address: string
-  city: string
+  name: string; email: string; phone: string; address: string; city: string
+}
+interface PaymentConfig {
+  mercadopago: { enabled: boolean; publicKey: string }
+  flow: { enabled: boolean }
+}
+
+const PAYMENT_LABELS: Record<string, { label: string; desc: string }> = {
+  mercadopago: { label: 'MercadoPago', desc: 'Tarjeta, transferencia y más' },
+  flow:        { label: 'Flow',        desc: 'Tarjeta de crédito/débito' },
 }
 
 export default function CheckoutPage() {
@@ -17,23 +22,46 @@ export default function CheckoutPage() {
   const { register, handleSubmit, formState: { errors } } = useForm<CheckoutForm>()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const router = useRouter()
+  const [payConfig, setPayConfig] = useState<PaymentConfig | null>(null)
+  const [payMethod, setPayMethod] = useState<string>('')
+
+  useEffect(() => {
+    fetch('/api/pagos/config').then(r => r.json()).then((data: PaymentConfig) => {
+      setPayConfig(data)
+      if (data.mercadopago?.enabled) setPayMethod('mercadopago')
+      else if (data.flow?.enabled)   setPayMethod('flow')
+    })
+  }, [])
+
+  const enabled = payConfig
+    ? [
+        ...(payConfig.mercadopago?.enabled ? ['mercadopago'] : []),
+        ...(payConfig.flow?.enabled        ? ['flow']        : []),
+      ]
+    : []
 
   const onSubmit = async (data: CheckoutForm) => {
-    setLoading(true)
-    setError('')
+    if (!payMethod) { setError('Selecciona un método de pago'); return }
+    setLoading(true); setError('')
     try {
-      const res = await fetch('/api/pedidos', {
+      const orderRes = await fetch('/api/pedidos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, items }),
+        body: JSON.stringify({ ...data, items, paymentProvider: payMethod }),
       })
-      if (!res.ok) throw new Error('Error al procesar el pedido')
-      const { id } = await res.json()
+      if (!orderRes.ok) throw new Error('Error al crear el pedido')
+      const { id: orderId } = await orderRes.json()
+
+      const payRes = await fetch(`/api/pagos/${payMethod}?orderId=${orderId}`)
+      if (!payRes.ok) {
+        const err = await payRes.json()
+        throw new Error(err.error || 'Error al procesar el pago')
+      }
+      const { url } = await payRes.json()
       clearCart()
-      router.push(`/cuenta/pedidos/${id}?nuevo=1`)
-    } catch {
-      setError('Hubo un error al procesar tu pedido. Intenta nuevamente.')
+      window.location.href = url
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Error al procesar tu pedido.')
     } finally {
       setLoading(false)
     }
@@ -54,35 +82,59 @@ export default function CheckoutPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <h2 className="font-semibold text-gray-700">Datos de envío</h2>
-
-          {[
-            { name: 'name', label: 'Nombre completo', placeholder: 'Juan Pérez' },
-            { name: 'email', label: 'Email', placeholder: 'juan@email.com' },
-            { name: 'phone', label: 'Teléfono', placeholder: '+56 9 1234 5678' },
-            { name: 'address', label: 'Dirección', placeholder: 'Calle 123, Depto 4' },
-            { name: 'city', label: 'Ciudad', placeholder: 'Santiago' },
-          ].map(field => (
+          {([
+            { name: 'name',    label: 'Nombre completo', placeholder: 'Juan Pérez' },
+            { name: 'email',   label: 'Email',           placeholder: 'juan@email.com' },
+            { name: 'phone',   label: 'Teléfono',        placeholder: '+56 9 1234 5678' },
+            { name: 'address', label: 'Dirección',       placeholder: 'Calle 123, Depto 4' },
+            { name: 'city',    label: 'Ciudad',          placeholder: 'Santiago' },
+          ] as const).map(field => (
             <div key={field.name}>
               <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
               <input
-                {...register(field.name as keyof CheckoutForm, { required: 'Campo requerido' })}
+                {...register(field.name, { required: 'Campo requerido' })}
                 placeholder={field.placeholder}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
-              {errors[field.name as keyof CheckoutForm] && (
-                <p className="text-xs text-red-500 mt-1">{errors[field.name as keyof CheckoutForm]?.message}</p>
+              {errors[field.name] && (
+                <p className="text-xs text-red-500 mt-1">{errors[field.name]?.message}</p>
               )}
             </div>
           ))}
 
+          {/* Método de pago */}
+          {enabled.length > 0 && (
+            <div>
+              <h2 className="font-semibold text-gray-700 mb-2">Método de pago</h2>
+              <div className="space-y-2">
+                {enabled.map(method => (
+                  <label key={method}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${payMethod === method ? 'border-brand-500 bg-brand-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                    <input type="radio" name="payMethod" value={method}
+                      checked={payMethod === method} onChange={() => setPayMethod(method)} className="text-brand-600" />
+                    <CreditCard size={18} className="text-gray-500 shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">{PAYMENT_LABELS[method]?.label}</p>
+                      <p className="text-xs text-gray-500">{PAYMENT_LABELS[method]?.desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {enabled.length === 0 && payConfig !== null && (
+            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+              <Landmark size={16} />
+              No hay métodos de pago habilitados. Contacta al administrador.
+            </div>
+          )}
+
           {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
-          >
-            {loading ? 'Procesando...' : 'Confirmar pedido'}
+          <button type="submit" disabled={loading || enabled.length === 0}
+            className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors">
+            {loading ? 'Procesando...' : 'Ir a pagar'}
           </button>
         </form>
 

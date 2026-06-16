@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
 export async function POST(req: Request) {
-  const { name, email, phone, address, city, items } = await req.json()
+  const { name, email, phone, address, city, items, paymentProvider } = await req.json()
 
   if (!items?.length) {
     return NextResponse.json({ error: 'No hay productos' }, { status: 400 })
@@ -31,7 +31,9 @@ export async function POST(req: Request) {
       total,
       address,
       city,
-      phone: phone ?? '',
+      phone:           phone ?? '',
+      paymentProvider: paymentProvider ?? null,
+      paymentStatus:   'PENDING',
       items: {
         create: items.map((item: { id: number; quantity: number }) => {
           const product = products.find(p => p.id === item.id)!
