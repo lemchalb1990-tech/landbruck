@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { signToken } from '@/lib/auth'
 import { sendOrderConfirmation } from '@/lib/email'
 
 export async function POST(req: Request) {
@@ -70,5 +71,7 @@ export async function POST(req: Request) {
     siteName,
   }).catch(e => console.error('[email]', e))
 
-  return NextResponse.json({ id: order.id }, { status: 201 })
+  const loginToken = signToken({ id: customer.id, email: customer.email })
+
+  return NextResponse.json({ id: order.id, loginToken }, { status: 201 })
 }

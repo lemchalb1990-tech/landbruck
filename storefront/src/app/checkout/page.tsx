@@ -58,7 +58,15 @@ export default function CheckoutPage() {
         body: JSON.stringify({ ...data, items, paymentProvider: payMethod, shippingCost }),
       })
       if (!orderRes.ok) throw new Error('Error al crear el pedido')
-      const { id: orderId } = await orderRes.json()
+      const { id: orderId, loginToken } = await orderRes.json()
+
+      if (loginToken) {
+        await fetch('/api/auth/autologin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: loginToken }),
+        })
+      }
 
       const payRes = await fetch(`/api/pagos/${payMethod}?orderId=${orderId}`)
       if (!payRes.ok) {

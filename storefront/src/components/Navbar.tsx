@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ShoppingCart, User, Menu, X } from 'lucide-react'
+import { ShoppingCart, User, Menu, X, Package } from 'lucide-react'
 import { useState } from 'react'
 import { useCart } from '@/context/CartContext'
 
@@ -15,10 +15,16 @@ const DEFAULT_NAV_LINKS: NavItem[] = [
   { href: '/contacto', label: 'Contacto' },
 ]
 
-export default function Navbar({ logo, navItems }: { logo?: LogoConfig; navItems?: NavItem[] }) {
+export default function Navbar({
+  logo, navItems, customerName,
+}: {
+  logo?: LogoConfig; navItems?: NavItem[]; customerName?: string | null
+}) {
   const navLinks = navItems && navItems.length > 0 ? navItems : DEFAULT_NAV_LINKS
   const [menuOpen, setMenuOpen] = useState(false)
   const { count } = useCart()
+
+  const firstName = customerName?.split(' ')[0] ?? null
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -40,11 +46,19 @@ export default function Navbar({ logo, navItems }: { logo?: LogoConfig; navItems
           ))}
         </nav>
 
-        {/* Iconos */}
+        {/* Iconos + usuario */}
         <div className="flex items-center gap-3">
-          <Link href="/cuenta" className="text-gray-500 hover:text-brand-600 transition-colors">
-            <User size={20} />
-          </Link>
+          {firstName ? (
+            <Link href="/cuenta/pedidos"
+              className="hidden md:flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:text-brand-800 transition-colors">
+              <User size={18} />
+              {firstName}
+            </Link>
+          ) : (
+            <Link href="/cuenta/login" className="text-gray-500 hover:text-brand-600 transition-colors">
+              <User size={20} />
+            </Link>
+          )}
           <Link href="/carrito" className="relative text-gray-500 hover:text-brand-600 transition-colors">
             <ShoppingCart size={20} />
             {count > 0 && (
@@ -72,13 +86,24 @@ export default function Navbar({ logo, navItems }: { logo?: LogoConfig; navItems
               {l.label}
             </Link>
           ))}
-          <Link
-            href="/cuenta"
-            onClick={() => setMenuOpen(false)}
-            className="py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
-          >
-            Mi cuenta
-          </Link>
+          {firstName ? (
+            <Link
+              href="/cuenta/pedidos"
+              onClick={() => setMenuOpen(false)}
+              className="py-2 px-3 rounded-lg text-sm font-medium text-brand-700 hover:bg-brand-50 flex items-center gap-2 transition-colors"
+            >
+              <Package size={16} />
+              Mis pedidos ({firstName})
+            </Link>
+          ) : (
+            <Link
+              href="/cuenta/login"
+              onClick={() => setMenuOpen(false)}
+              className="py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50 hover:text-brand-700 transition-colors"
+            >
+              Mi cuenta
+            </Link>
+          )}
         </div>
       )}
     </header>
