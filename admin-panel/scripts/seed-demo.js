@@ -4,17 +4,17 @@ const bcrypt = require('bcryptjs')
 const prisma = new PrismaClient()
 
 async function main() {
-  const existing = await prisma.customer.findUnique({ where: { email: 'carlos@demo.cl' } })
+  const existing = await prisma.customer.findUnique({ where: { email: 'felipe@demo.cl' } })
   if (existing) {
-    console.log('El cliente demo ya existe. Email: carlos@demo.cl | Password: Demo1234!')
+    console.log('El cliente demo ya existe. Email: felipe@demo.cl | Password: Demo1234!')
     return
   }
 
   const password = await bcrypt.hash('Demo1234!', 10)
   const customer = await prisma.customer.create({
     data: {
-      name:     'Carlos Soto',
-      email:    'carlos@demo.cl',
+      name:     'Felipe Castro',
+      email:    'felipe@demo.cl',
       phone:    '+56 9 8765 4321',
       address:  'Av. Providencia 1234, Depto 5',
       city:     'Santiago',
@@ -124,7 +124,7 @@ async function main() {
   ] })
 
   console.log('\n✓ Cliente demo creado exitosamente')
-  console.log('  Email:    carlos@demo.cl')
+  console.log('  Email:    felipe@demo.cl')
   console.log('  Password: Demo1234!')
   console.log(`  Pedidos:  #${o1.id} (Entregado) | #${o2.id} (En camino) | #${o3.id} (Confirmado) | #${o4.id} (Pendiente) | #${o5.id} (Cancelado)\n`)
 }
