@@ -50,26 +50,40 @@ export async function POST(req: Request) {
     },
   })
 
-  const siteConfig = await prisma.siteConfig.findMany({
-    where: { key: { in: ['siteInfo'] } },
-  })
-  const siteInfo = siteConfig.find(c => c.key === 'siteInfo')?.value as { name?: string } | undefined
-  const siteName = siteInfo?.name || 'Landbruck'
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+  const siteConfig = await prisma.siteConfig.findMany({ where: { key: { in: ['siteInfo'] } } })
+  const siteInfo   = siteConfig.find(c => c.key === 'siteInfo')?.value as { name?: string } | undefined
+  const siteName   = siteInfo?.name || 'Landbruck'
+  const siteUrl    = process.env.NEXT_PUBLIC_SITE_URL || ''
 
+  // Notificación de pedido recibido
+  await prisma.notification.create({
+    data: {
+      customerId: customer.id,
+      type:  'ORDER_CREATED',
+      title: 'Pedido recibido',
+      body:  `Tu pedido #${order.id} fue recibido. Estamos procesando tu pago.`,
+    },
+  })
+
+  // Envío de email + notificación EMAIL_SENT (no bloqueante)
   sendOrderConfirmation({
-    to:           email,
-    customerName: name,
-    orderId:      order.id,
-    total,
+    to: email, customerName: name, orderId: order.id, total,
     items: items.map((item: { id: number; quantity: number }) => {
       const product = products.find(p => p.id === item.id)!
       return { name: product.name, quantity: item.quantity, price: Number(product.price) }
     }),
     tempPassword: isNewCustomer ? tempPassword : undefined,
-    siteUrl,
-    siteName,
-  }).catch(e => console.error('[email]', e))
+    siteUrl, siteName,
+  }).then(() =>
+    prisma.notification.create({
+      data: {
+        customerId: customer!.id,
+        type:  'EMAIL_SENT',
+        title: 'Correo enviado',
+        body:  `Enviamos la confirmación de tu pedido #${order.id} a ${email}.`,
+      },
+    }).catch(() => {})
+  ).catch(e => console.error('[email]', e))
 
   const loginToken = signToken({ id: customer.id, email: customer.email })
 

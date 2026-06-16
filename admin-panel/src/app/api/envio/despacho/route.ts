@@ -78,5 +78,14 @@ export async function POST(req: Request) {
     data:  { trackingNumber: tracking_number, trackingUrl: label_url, status: 'SHIPPED' },
   })
 
+  await prisma.notification.create({
+    data: {
+      customerId: order.customerId,
+      type:  'ORDER_SHIPPED',
+      title: 'Pedido despachado por Starken',
+      body:  `Tu pedido #${order.id} fue despachado. Nº de seguimiento: ${tracking_number}`,
+    },
+  }).catch(() => {})
+
   return NextResponse.json({ trackingNumber: tracking_number, trackingUrl: label_url })
 }
