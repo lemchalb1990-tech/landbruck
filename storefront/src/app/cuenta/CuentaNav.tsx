@@ -2,14 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Package, Bell } from 'lucide-react'
+import { Package, Bell, FileText } from 'lucide-react'
 
 export default function CuentaNav({ unreadCount }: { unreadCount: number }) {
   const pathname = usePathname()
 
   const tabs = [
-    { href: '/cuenta/pedidos',       label: 'Mis pedidos',      icon: Package },
-    { href: '/cuenta/notificaciones', label: 'Notificaciones',  icon: Bell, badge: unreadCount },
+    { href: '/cuenta/pedidos',        label: 'Mis pedidos',    icon: Package },
+    { href: '/cuenta/notificaciones', label: 'Notificaciones', icon: Bell, badge: unreadCount },
+    { href: '/cuenta/documentos',     label: 'Documentos',     icon: FileText },
   ]
 
   return (
