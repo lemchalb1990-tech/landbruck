@@ -1,6 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { Plus, Trash2 } from 'lucide-react'
+
+interface Region { name: string; cost: number }
 
 interface ShippingConfig {
   enabled:       boolean
@@ -12,6 +15,7 @@ interface ShippingConfig {
   originPhone:   string
   service:       string
   shippingCost:  number
+  regions:       Region[]
 }
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -39,13 +43,28 @@ function Field({ label, value, onChange, placeholder, type = 'text', hint }: {
 }
 
 export default function EnvioEditor({ shipping: init }: { shipping: ShippingConfig }) {
-  const [cfg, setCfg]     = useState(init)
+  const [cfg, setCfg]       = useState(init)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved]   = useState(false)
   const [error, setError]   = useState('')
 
-  function upd(field: keyof ShippingConfig, v: string | boolean | number) {
+  function upd(field: keyof ShippingConfig, v: string | boolean | number | Region[]) {
     setCfg(c => ({ ...c, [field]: v }))
+  }
+
+  function updRegion(i: number, field: keyof Region, v: string) {
+    const regions = cfg.regions.map((r, idx) =>
+      idx === i ? { ...r, [field]: field === 'cost' ? (parseInt(v) || 0) : v } : r
+    )
+    upd('regions', regions)
+  }
+
+  function addRegion() {
+    upd('regions', [...cfg.regions, { name: '', cost: 0 }])
+  }
+
+  function removeRegion(i: number) {
+    upd('regions', cfg.regions.filter((_, idx) => idx !== i))
   }
 
   async function save() {
@@ -64,7 +83,7 @@ export default function EnvioEditor({ shipping: init }: { shipping: ShippingConf
   return (
     <div className="space-y-5">
 
-      {/* Credenciales */}
+      {/* Credenciales Starken */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <div>
@@ -103,27 +122,70 @@ export default function EnvioEditor({ shipping: init }: { shipping: ShippingConf
             <p className="text-xs text-gray-500 mt-0.5">Desde dónde se despachan los pedidos</p>
           </div>
           <div className="px-5 py-4 space-y-4">
-            <Field label="Ciudad origen" value={cfg.originCity} onChange={v => upd('originCity', v)}
-              placeholder="Santiago" />
-            <Field label="Dirección bodega" value={cfg.originAddress} onChange={v => upd('originAddress', v)}
-              placeholder="Av. Ejemplo 1234, Bodega 5" />
-            <Field label="Teléfono contacto" value={cfg.originPhone} onChange={v => upd('originPhone', v)}
-              placeholder="+56 9 1234 5678" />
+            <Field label="Ciudad origen" value={cfg.originCity} onChange={v => upd('originCity', v)} placeholder="Santiago" />
+            <Field label="Dirección bodega" value={cfg.originAddress} onChange={v => upd('originAddress', v)} placeholder="Av. Ejemplo 1234, Bodega 5" />
+            <Field label="Teléfono contacto" value={cfg.originPhone} onChange={v => upd('originPhone', v)} placeholder="+56 9 1234 5678" />
           </div>
         </div>
       )}
 
-      {/* Costo */}
+      {/* Tarifas por región */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100">
-          <p className="font-semibold text-gray-900">Costo de envío</p>
-          <p className="text-xs text-gray-500 mt-0.5">Monto fijo mostrado en el checkout al cliente</p>
+          <p className="font-semibold text-gray-900">Tarifas por región</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            El costo se selecciona según la ciudad ingresada en el checkout. Si no hay coincidencia se usa el costo por defecto.
+          </p>
         </div>
-        <div className="px-5 py-4">
-          <Field label="Costo (CLP)" value={cfg.shippingCost}
-            onChange={v => upd('shippingCost', parseInt(v) || 0)}
-            placeholder="5000" type="number"
-            hint="Ingresa 0 para envío gratis" />
+        <div className="px-5 py-4 space-y-3">
+
+          {cfg.regions.length > 0 && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-[1fr_120px_32px] gap-2 text-xs font-medium text-gray-500 px-1">
+                <span>Región / ciudad</span>
+                <span>Costo (CLP)</span>
+                <span />
+              </div>
+              {cfg.regions.map((r, i) => (
+                <div key={i} className="grid grid-cols-[1fr_120px_32px] gap-2 items-center">
+                  <input
+                    value={r.name}
+                    onChange={e => updRegion(i, 'name', e.target.value)}
+                    placeholder="Ej: Temuco"
+                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                  <input
+                    type="number"
+                    value={r.cost}
+                    onChange={e => updRegion(i, 'cost', e.target.value)}
+                    placeholder="6990"
+                    className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                  <button type="button" onClick={() => removeRegion(i)}
+                    className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button type="button" onClick={addRegion}
+            className="flex items-center gap-1.5 text-xs font-medium text-brand-600 hover:text-brand-700 transition-colors">
+            <Plus size={14} />
+            Agregar región
+          </button>
+
+          <div className="pt-3 border-t border-gray-100">
+            <Field
+              label="Costo por defecto (CLP)"
+              value={cfg.shippingCost}
+              onChange={v => upd('shippingCost', parseInt(v) || 0)}
+              placeholder="5000"
+              type="number"
+              hint="Se aplica cuando la ciudad del cliente no coincide con ninguna región. Ingresa 0 para envío gratis."
+            />
+          </div>
         </div>
       </div>
 

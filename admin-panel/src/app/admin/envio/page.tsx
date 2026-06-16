@@ -15,6 +15,7 @@ const DEFAULT_SHIPPING = {
   originPhone:    '',
   service:        'NORMAL',
   shippingCost:   5000,
+  regions:        [] as { name: string; cost: number }[],
 }
 
 export default async function EnvioPage() {

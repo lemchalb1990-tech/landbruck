@@ -11,9 +11,6 @@ interface PaymentConfig {
   mercadopago: { enabled: boolean; publicKey: string }
   flow: { enabled: boolean }
 }
-interface ShippingConfig {
-  enabled: boolean; shippingCost: number; service: string
-}
 
 const PAYMENT_LABELS: Record<string, { label: string; desc: string }> = {
   mercadopago: { label: 'MercadoPago', desc: 'Tarjeta, transferencia y más' },
@@ -22,24 +19,44 @@ const PAYMENT_LABELS: Record<string, { label: string; desc: string }> = {
 
 export default function CheckoutPage() {
   const { items, total, clearCart } = useCart()
-  const { register, handleSubmit, formState: { errors } } = useForm<CheckoutForm>()
-  const [loading, setLoading]       = useState(false)
-  const [error, setError]           = useState('')
-  const [payConfig, setPayConfig]   = useState<PaymentConfig | null>(null)
-  const [shipping, setShipping]     = useState<ShippingConfig | null>(null)
-  const [payMethod, setPayMethod]   = useState<string>('')
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<CheckoutForm>()
+  const [loading, setLoading]           = useState(false)
+  const [error, setError]               = useState('')
+  const [payConfig, setPayConfig]       = useState<PaymentConfig | null>(null)
+  const [payMethod, setPayMethod]       = useState<string>('')
+  const [shippingEnabled, setShippingEnabled] = useState(false)
+  const [shippingCost, setShippingCost]       = useState(0)
+  const [loadingShipping, setLoadingShipping] = useState(false)
 
+  const cityValue = watch('city', '')
+
+  // Carga inicial: configuración de pagos + costo de envío base
   useEffect(() => {
     fetch('/api/pagos/config').then(r => r.json()).then((data: PaymentConfig) => {
       setPayConfig(data)
       if (data.mercadopago?.enabled) setPayMethod('mercadopago')
       else if (data.flow?.enabled)   setPayMethod('flow')
     })
-    fetch('/api/envio/cotizar').then(r => r.json()).then(setShipping)
+    fetch('/api/envio/cotizar').then(r => r.json()).then(data => {
+      setShippingEnabled(data.enabled)
+      setShippingCost(data.shippingCost ?? 0)
+    })
   }, [])
 
-  const shippingCost = shipping?.enabled ? (shipping.shippingCost ?? 0) : 0
-  const grandTotal   = total + shippingCost
+  // Recalcula costo según ciudad ingresada (debounce 600ms)
+  useEffect(() => {
+    if (!shippingEnabled || cityValue.trim().length < 3) return
+    setLoadingShipping(true)
+    const t = setTimeout(() => {
+      fetch(`/api/envio/cotizar?city=${encodeURIComponent(cityValue.trim())}`)
+        .then(r => r.json())
+        .then(data => setShippingCost(data.shippingCost ?? 0))
+        .finally(() => setLoadingShipping(false))
+    }, 600)
+    return () => clearTimeout(t)
+  }, [cityValue, shippingEnabled])
+
+  const grandTotal = total + shippingCost
 
   const enabled = payConfig
     ? [
@@ -103,7 +120,7 @@ export default function CheckoutPage() {
             { name: 'email',   label: 'Email',           placeholder: 'juan@email.com' },
             { name: 'phone',   label: 'Teléfono',        placeholder: '+56 9 1234 5678' },
             { name: 'address', label: 'Dirección',       placeholder: 'Calle 123, Depto 4' },
-            { name: 'city',    label: 'Ciudad',          placeholder: 'Santiago' },
+            { name: 'city',    label: 'Ciudad / Región', placeholder: 'Ej: Temuco, Puerto Montt' },
           ] as const).map(field => (
             <div key={field.name}>
               <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
@@ -170,14 +187,18 @@ export default function CheckoutPage() {
               <span>Subtotal</span>
               <span>${total.toLocaleString('es-CL')}</span>
             </div>
-            {shipping?.enabled && (
+            {shippingEnabled && (
               <div className="flex justify-between text-sm text-gray-600">
                 <span className="flex items-center gap-1.5">
                   <Truck size={14} />
                   Envío Starken
                 </span>
-                <span>
-                  {shippingCost === 0 ? 'Gratis' : `$${shippingCost.toLocaleString('es-CL')}`}
+                <span className={loadingShipping ? 'text-gray-400 text-xs' : ''}>
+                  {loadingShipping
+                    ? 'Calculando...'
+                    : shippingCost === 0
+                      ? 'Gratis'
+                      : `$${shippingCost.toLocaleString('es-CL')}`}
                 </span>
               </div>
             )}
