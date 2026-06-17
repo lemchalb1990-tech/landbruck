@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
 import PedidosList from './PedidosList'
 
 export default async function PedidosPage() {
@@ -27,5 +29,18 @@ export default async function PedidosPage() {
     )
   }
 
-  return <PedidosList orders={orders as any} />
+  // Pre-format dates on server to avoid hydration mismatch (server UTC vs client timezone)
+  const serialized = orders.map(o => ({
+    ...o,
+    createdAt:     o.createdAt.toISOString(),
+    formattedDate: format(o.createdAt, "d 'de' MMMM yyyy", { locale: es }),
+    monthKey:      format(o.createdAt, 'MMMM yyyy', { locale: es }),
+    total:         Number(o.total),
+    items: o.items.map(i => ({
+      ...i,
+      price: Number(i.price),
+    })),
+  }))
+
+  return <PedidosList orders={serialized} />
 }

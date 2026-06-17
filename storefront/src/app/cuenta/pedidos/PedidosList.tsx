@@ -1,14 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 import { Truck, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface OrderItem { id: number; quantity: number; price: number; product: { name: string } }
 interface Order {
-  id: number; status: string; createdAt: Date | string; total: number
-  address: string; city: string; paymentProvider: string | null
+  id: number; status: string; createdAt: string
+  formattedDate: string; monthKey: string
+  total: number; address: string; city: string
+  paymentProvider: string | null
   trackingNumber: string | null; trackingUrl: string | null
   items: OrderItem[]
 }
@@ -48,9 +48,8 @@ function matchFilter(status: string, filter: string) {
 function groupByMonth(orders: Order[]) {
   const map = new Map<string, Order[]>()
   orders.forEach(o => {
-    const key = format(new Date(o.createdAt), 'MMMM yyyy', { locale: es })
-    if (!map.has(key)) map.set(key, [])
-    map.get(key)!.push(o)
+    if (!map.has(o.monthKey)) map.set(o.monthKey, [])
+    map.get(o.monthKey)!.push(o)
   })
   return map
 }
@@ -62,11 +61,9 @@ function StepBar({ status }: { status: string }) {
   const current = STEPS.indexOf(status)
   return (
     <div className="mt-3">
-      {/* Mobile: texto */}
       <p className="text-xs text-gray-500 sm:hidden">
         Paso {current + 1} de {STEPS.length}: <strong>{STATUS_LABEL[status]}</strong>
       </p>
-      {/* Desktop: barra */}
       <div className="hidden sm:flex items-center gap-0">
         {STEPS.map((s, i) => {
           const done = i <= current
@@ -92,7 +89,6 @@ function OrderRow({ order }: { order: Order }) {
 
   return (
     <li className="py-4">
-      {/* Fila principal */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
@@ -104,13 +100,11 @@ function OrderRow({ order }: { order: Order }) {
               <span className="text-[11px] text-gray-400 capitalize">{order.paymentProvider}</span>
             )}
           </div>
-          <p className="text-xs text-gray-400 mt-0.5">
-            {format(new Date(order.createdAt), "d 'de' MMMM yyyy", { locale: es })}
-          </p>
+          <p className="text-xs text-gray-400 mt-0.5">{order.formattedDate}</p>
           <StepBar status={order.status} />
         </div>
         <div className="text-right shrink-0">
-          <p className="text-sm font-bold text-gray-900">${Number(order.total).toLocaleString('es-CL')}</p>
+          <p className="text-sm font-bold text-gray-900">${order.total.toLocaleString('es-CL')}</p>
           <button onClick={() => setOpen(v => !v)}
             className="mt-1 flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 ml-auto transition-colors">
             {open ? <><ChevronUp size={13} /> Ocultar</> : <><ChevronDown size={13} /> Detalle</>}
@@ -118,21 +112,17 @@ function OrderRow({ order }: { order: Order }) {
         </div>
       </div>
 
-      {/* Detalle expandible */}
       {open && (
         <div className="mt-3 pl-3 border-l-2 border-gray-100 space-y-3">
-          {/* Productos */}
           <ul className="space-y-1">
             {order.items.map(item => (
               <li key={item.id} className="flex justify-between text-xs text-gray-600">
                 <span>{item.product.name} <span className="text-gray-400">x{item.quantity}</span></span>
-                <span>${(Number(item.price) * item.quantity).toLocaleString('es-CL')}</span>
+                <span>${(item.price * item.quantity).toLocaleString('es-CL')}</span>
               </li>
             ))}
           </ul>
-          {/* Dirección */}
           <p className="text-xs text-gray-400">📍 {order.address}, {order.city}</p>
-          {/* Tracking */}
           {order.trackingNumber && (
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <Truck size={12} className="text-purple-500 shrink-0" />
@@ -157,8 +147,7 @@ export default function PedidosList({ orders }: { orders: Order[] }) {
 
   return (
     <div>
-      {/* Filtros */}
-      <div className="flex gap-1 overflow-x-auto pb-1 mb-5 scrollbar-hide">
+      <div className="flex gap-1 overflow-x-auto pb-1 mb-5">
         {FILTERS.map(f => (
           <button key={f.key} onClick={() => setFilter(f.key)}
             className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border ${
