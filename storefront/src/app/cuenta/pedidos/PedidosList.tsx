@@ -180,7 +180,7 @@ export default function PedidosList({ orders }: { orders: Order[] }) {
         <p className="text-center py-16 text-sm text-gray-400">No hay pedidos en esta categoría.</p>
       ) : (
         <div className="space-y-6">
-          {[...grouped.entries()].map(([month, monthOrders]) => (
+          {Array.from(grouped.entries()).map(([month, monthOrders]) => (
             <section key={month}>
               <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 capitalize">
                 {month}
