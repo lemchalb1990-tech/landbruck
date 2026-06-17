@@ -8,7 +8,7 @@ export default function AutoRedirect() {
   const router = useRouter()
 
   useEffect(() => {
-    if (seconds <= 0) { router.push('/cuenta/pedidos'); return }
+    if (seconds <= 0) { window.location.href = '/cuenta/pedidos'; return }
     const t = setTimeout(() => setSeconds(s => s - 1), 1000)
     return () => clearTimeout(t)
   }, [seconds, router])

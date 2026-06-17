@@ -28,7 +28,7 @@ export default function LoginPage() {
         const { error } = await res.json()
         throw new Error(error)
       }
-      router.push('/cuenta/pedidos')
+      window.location.href = '/cuenta/pedidos'
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Error al iniciar sesión')
     } finally {
