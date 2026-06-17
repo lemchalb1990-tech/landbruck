@@ -36,7 +36,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-sidebar flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Landbruck Admin</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{process.env.NEXT_PUBLIC_SITE_NAME || 'Landbruck'}</h1>
           <p className="text-sm text-gray-500 mt-1">Panel de administración</p>
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

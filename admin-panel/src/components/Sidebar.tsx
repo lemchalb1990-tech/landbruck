@@ -17,14 +17,15 @@ const ALL_LINKS = [
   { href: '/admin/usuarios',  label: 'Usuarios',       icon: UserCog,         roles: ['ADMIN'] },
 ]
 
-export default function Sidebar({ role }: { role: string }) {
+export default function Sidebar({ role, siteName }: { role: string; siteName: string }) {
   const pathname = usePathname()
   const links = ALL_LINKS.filter(l => l.roles.includes(role))
 
   return (
     <aside className="w-64 min-h-screen bg-sidebar text-white flex flex-col">
       <div className="px-6 py-5 border-b border-white/10">
-        <h1 className="text-lg font-bold">Landbruck Admin</h1>
+        <h1 className="text-lg font-bold">{siteName}</h1>
+        <p className="text-xs text-white/50 mt-0.5">Administrador</p>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-1">
         {links.map(({ href, label, icon: Icon }) => (
