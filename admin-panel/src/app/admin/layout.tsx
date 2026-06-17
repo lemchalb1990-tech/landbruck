@@ -7,8 +7,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const session = getAdminSession()
   if (!session) redirect('/login')
 
-  const config   = await prisma.siteConfig.findUnique({ where: { key: 'siteInfo' } })
-  const siteName = (config?.value as { name?: string } | null)?.name || 'Landbruck'
+  let siteName = 'Landbruck'
+  try {
+    const config = await prisma.siteConfig.findUnique({ where: { key: 'siteInfo' } })
+    siteName = (config?.value as { name?: string } | null)?.name || 'Landbruck'
+  } catch { /* fallback */ }
 
   return (
     <div className="flex min-h-screen">

@@ -3,8 +3,11 @@ import { prisma } from '@/lib/prisma'
 import './globals.css'
 
 export async function generateMetadata(): Promise<Metadata> {
-  const config   = await prisma.siteConfig.findUnique({ where: { key: 'siteInfo' } })
-  const siteName = (config?.value as { name?: string } | null)?.name || 'Landbruck'
+  let siteName = 'Landbruck'
+  try {
+    const config = await prisma.siteConfig.findUnique({ where: { key: 'siteInfo' } })
+    siteName = (config?.value as { name?: string } | null)?.name || 'Landbruck'
+  } catch { /* fallback */ }
   return {
     title:       `${siteName} · Administrador`,
     description: `Panel de administración ${siteName}`,
